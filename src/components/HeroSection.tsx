@@ -75,8 +75,10 @@ function GlitchLogo() {
 
   return (
     <h1
-      className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-[0.06em] uppercase leading-none select-none"
+      className="text-7xl md:text-9xl lg:text-[11rem] uppercase leading-none select-none"
       style={{
+        fontFamily: "'Bebas Neue', sans-serif",
+        letterSpacing: "0.08em",
         color: "#FFFFFF",
         textShadow: isGlitching
           ? "4px 0 rgba(196,82,42,0.9), -4px 0 rgba(80,180,255,0.75), 0 0 80px rgba(255,212,168,0.35)"
