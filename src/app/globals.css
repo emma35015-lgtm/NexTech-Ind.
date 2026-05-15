@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-nt-bg: #C4522A;
+  --color-nt-light: #CF5E32;
+  --color-nt-dark: #A03D1A;
+  --color-nt-darker: #7A2D10;
+  --color-cream: #FFF0DC;
+  --color-cream-dim: #E0C4A0;
+  --color-cream-faint: #C4A07A;
+  --color-panel: #1A0800;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
+  --font-sans: 'Space Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: #C4522A;
+  color: #FFF0DC;
+  font-family: 'Space Mono', 'Courier New', monospace;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(255, 240, 220, 0.3);
+  color: #FFF0DC;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #7A2D10; }
+::-webkit-scrollbar-thumb { background: #E0C4A0; border-radius: 2px; }
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 240, 220, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 240, 220, 0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.dark-panel {
+  background-color: #1A0800;
+  border: 1px solid rgba(255, 240, 220, 0.15);
+}
+
+.formula-block {
+  background: rgba(0, 0, 0, 0.28);
+  border-left: 3px solid rgba(255, 240, 220, 0.5);
+  padding: 1rem 1.25rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: #FFF0DC;
+  overflow-x: auto;
+}
+
+.tva-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 240, 220, 0.5);
+  font-family: 'Space Mono', monospace;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.blink { animation: blink 1s step-end infinite; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.7s ease-out forwards; }
+
+@keyframes drawLine {
+  from { stroke-dashoffset: var(--path-length, 2000); }
+  to { stroke-dashoffset: 0; }
+}
+.draw-line {
+  stroke-dasharray: var(--path-length, 2000);
+  animation: drawLine 2s ease-in-out forwards;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 240, 220, 0.2);
+}
+
+.num-highlight { color: #FFD4A8; font-weight: 700; }
+
+/* Scanlines for TVA panels */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom, transparent 0px, transparent 3px,
+    rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+}
