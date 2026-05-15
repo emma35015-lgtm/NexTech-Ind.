@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
 import { ParticleBackground } from "./ParticleBackground";
 import { ChevronDown } from "lucide-react";
 
-/* Twinkling stars config */
+/* ─── Stars ──────────────────────────────────────────────────── */
 const STARS = Array.from({ length: 40 }, (_, i) => ({
   id: i,
   x: Math.random() * 100,
@@ -14,16 +15,114 @@ const STARS = Array.from({ length: 40 }, (_, i) => ({
   dur: 2 + Math.random() * 3,
 }));
 
+/* ─── Glitch logo ────────────────────────────────────────────── */
+const GCHARS = "!@#$%^&*<>[]{}|/\\?~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const LOGO = "NexTech";
+
+function GlitchLogo() {
+  const [chars, setChars] = useState<string[]>(() =>
+    LOGO.split("").map(() => GCHARS[Math.floor(Math.random() * GCHARS.length)])
+  );
+  const [isGlitching, setIsGlitching] = useState(false);
+
+  // Initial decode: letters resolve left-to-right over ~1.6 s
+  useEffect(() => {
+    const FRAMES = 40;
+    let f = 0;
+    const id = setInterval(() => {
+      f++;
+      setChars(
+        LOGO.split("").map((ch, i) =>
+          f > (i / LOGO.length) * FRAMES * 0.75
+            ? ch
+            : GCHARS[Math.floor(Math.random() * GCHARS.length)]
+        )
+      );
+      if (f >= FRAMES) clearInterval(id);
+    }, 40);
+    return () => clearInterval(id);
+  }, []);
+
+  // Periodic micro-glitch every 5-10 s
+  useEffect(() => {
+    let outer: ReturnType<typeof setTimeout>;
+    function schedule() {
+      outer = setTimeout(() => {
+        setIsGlitching(true);
+        let g = 0;
+        const id = setInterval(() => {
+          g++;
+          if (g <= 5) {
+            setChars(
+              LOGO.split("").map((ch) =>
+                Math.random() > 0.55
+                  ? GCHARS[Math.floor(Math.random() * GCHARS.length)]
+                  : ch
+              )
+            );
+          } else {
+            clearInterval(id);
+            setChars(LOGO.split(""));
+            setIsGlitching(false);
+            schedule();
+          }
+        }, 50);
+      }, 5000 + Math.random() * 5000);
+    }
+    schedule();
+    return () => clearTimeout(outer);
+  }, []);
+
+  return (
+    <h1
+      className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-[0.06em] uppercase leading-none select-none"
+      style={{
+        color: "#FFFFFF",
+        textShadow: isGlitching
+          ? "4px 0 rgba(196,82,42,0.9), -4px 0 rgba(80,180,255,0.75), 0 0 80px rgba(255,212,168,0.35)"
+          : "0 0 60px rgba(255,212,168,0.12), 0 2px 50px rgba(0,0,0,0.35)",
+        transition: isGlitching ? "none" : "text-shadow 0.5s ease",
+      }}
+    >
+      {chars.join("")}
+    </h1>
+  );
+}
+
+/* ─── Hero ───────────────────────────────────────────────────── */
 export function HeroSection() {
+  const rotX = useMotionValue(0);
+  const rotY = useMotionValue(0);
+  const springX = useSpring(rotX, { stiffness: 80, damping: 18 });
+  const springY = useSpring(rotY, { stiffness: 80, damping: 18 });
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const dx = (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+      const dy = (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+      rotX.set(-dy * 10);
+      rotY.set(dx * 12);
+    },
+    [rotX, rotY]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    rotX.set(0);
+    rotY.set(0);
+  }, [rotX, rotY]);
+
   return (
     <section
       id="hero"
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden grid-bg"
-      style={{ paddingTop: "30px" }} /* account for ticker */
+      style={{ paddingTop: "30px" }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
       <ParticleBackground />
 
-      {/* Twinkling stars (SVG overlay) */}
+      {/* Twinkling stars */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ zIndex: 1 }}
@@ -48,7 +147,10 @@ export function HeroSection() {
       </svg>
 
       {/* Content */}
-      <div className="relative flex flex-col items-center text-center px-6 gap-8" style={{ zIndex: 2 }}>
+      <div
+        className="relative flex flex-col items-center text-center px-6 gap-8"
+        style={{ zIndex: 2 }}
+      >
         {/* Course label */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -59,25 +161,27 @@ export function HeroSection() {
           Universidad La Salle Bajío &nbsp;·&nbsp; Ingeniería Industrial &nbsp;·&nbsp; Mayo 2026
         </motion.div>
 
-        {/* Logo + orbit */}
+        {/* Logo block — 3D parallax wrapper */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, type: "spring", damping: 18 }}
           className="relative flex flex-col items-center gap-2"
+          style={{
+            rotateX: springX,
+            rotateY: springY,
+            transformPerspective: 900,
+            transformStyle: "preserve-3d",
+          }}
         >
           {/* Orbit ellipse */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <motion.div
               className="relative"
-              style={{
-                width: "340px",
-                height: "120px",
-              }}
+              style={{ width: "340px", height: "120px" }}
               animate={{ rotate: 360 }}
               transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
             >
-              {/* Ellipse trace */}
               <svg
                 viewBox="0 0 340 120"
                 className="absolute inset-0 w-full h-full"
@@ -94,7 +198,6 @@ export function HeroSection() {
                   strokeDasharray="4 6"
                 />
               </svg>
-              {/* Orbiting dot */}
               <div
                 className="absolute"
                 style={{
@@ -111,12 +214,8 @@ export function HeroSection() {
             </motion.div>
           </div>
 
-          <h1
-            className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-[0.06em] uppercase leading-none"
-            style={{ color: "#FFFFFF", textShadow: "0 2px 50px rgba(0,0,0,0.35)" }}
-          >
-            NexTech
-          </h1>
+          <GlitchLogo />
+
           <div
             className="text-xl md:text-3xl tracking-[0.35em] uppercase font-normal"
             style={{ color: "rgba(255,255,255,0.65)" }}
@@ -125,7 +224,7 @@ export function HeroSection() {
           </div>
         </motion.div>
 
-        {/* Horizontal rule */}
+        {/* Divider */}
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
@@ -151,7 +250,10 @@ export function HeroSection() {
           >
             Modelos de Inventario
           </p>
-          <p className="text-sm md:text-base tracking-[0.1em]" style={{ color: "rgba(255,255,255,0.7)" }}>
+          <p
+            className="text-sm md:text-base tracking-[0.1em]"
+            style={{ color: "rgba(255,255,255,0.7)" }}
+          >
             Compras Sin Déficit &nbsp;/&nbsp; Compras Con Déficit
           </p>
         </motion.div>
@@ -189,11 +291,17 @@ export function HeroSection() {
           transition={{ delay: 1.3 }}
           className="flex flex-wrap justify-center gap-x-6 gap-y-1 mt-1"
         >
-          {["Emmanuel", "Jessica Juárez", "Regina González", "Regina Elorza", "Andrea Piña"].map((name) => (
-            <span key={name} className="text-xs tracking-[0.08em]" style={{ color: "rgba(255,255,255,0.55)" }}>
-              {name}
-            </span>
-          ))}
+          {["Emmanuel", "Jessica Juárez", "Regina González", "Regina Elorza", "Andrea Piña"].map(
+            (name) => (
+              <span
+                key={name}
+                className="text-xs tracking-[0.08em]"
+                style={{ color: "rgba(255,255,255,0.55)" }}
+              >
+                {name}
+              </span>
+            )
+          )}
         </motion.div>
       </div>
 
