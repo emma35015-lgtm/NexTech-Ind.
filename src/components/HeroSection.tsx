@@ -39,7 +39,7 @@ export function HeroSection() {
           </h1>
           <div
             className="text-xl md:text-3xl tracking-[0.35em] uppercase font-normal"
-            style={{ color: "rgba(255,240,220,0.65)" }}
+            style={{ color: "rgba(255,255,255,0.85)" }}
           >
             Industries
           </div>
@@ -53,7 +53,7 @@ export function HeroSection() {
           className="w-64 md:w-96 flex items-center gap-3"
         >
           <div className="flex-1 h-px" style={{ background: "rgba(255,240,220,0.35)" }} />
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,240,220,0.5)" }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.72)" }} />
           <div className="w-1 h-1 rounded-full" style={{ background: "rgba(255,240,220,0.3)" }} />
           <div className="flex-1 h-px" style={{ background: "rgba(255,240,220,0.35)" }} />
         </motion.div>
@@ -73,7 +73,7 @@ export function HeroSection() {
           </p>
           <p
             className="text-sm md:text-base tracking-[0.1em]"
-            style={{ color: "rgba(255,240,220,0.6)" }}
+            style={{ color: "rgba(255,255,255,0.82)" }}
           >
             Compras Sin Déficit &nbsp;/&nbsp; Compras Con Déficit
           </p>
@@ -116,7 +116,7 @@ export function HeroSection() {
             <span
               key={name}
               className="text-xs tracking-[0.08em]"
-              style={{ color: "rgba(255,240,220,0.5)" }}
+              style={{ color: "rgba(255,255,255,0.72)" }}
             >
               {name}
             </span>

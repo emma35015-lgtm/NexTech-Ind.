@@ -100,7 +100,7 @@ export function Conclusiones() {
                   className="h-px mb-3"
                   style={{ background: "rgba(255,240,220,0.12)" }}
                 />
-                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,240,220,0.68)" }}>
+                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
                   {c.body}
                 </p>
               </div>

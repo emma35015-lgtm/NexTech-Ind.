@@ -65,7 +65,7 @@ export function ProblemaSection({
               style={{
                 background: isDeficit ? "rgba(180,60,30,0.3)" : "rgba(0,0,0,0.25)",
                 border: `1px solid ${isDeficit ? "rgba(220,100,60,0.4)" : "rgba(255,240,220,0.2)"}`,
-                color: isDeficit ? "#FFB490" : "rgba(255,240,220,0.6)",
+                color: isDeficit ? "#FFB490" : "rgba(255,255,255,0.85)",
               }}
             >
               {isDeficit ? "Con Déficit" : "Sin Déficit"}
@@ -89,7 +89,7 @@ export function ProblemaSection({
           <motion.div custom={2} variants={fadeUp} className="md:col-span-2 space-y-5">
             <div>
               <div className="tva-label mb-3">Planteamiento</div>
-              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,240,220,0.72)" }}>
+              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
                 {planteamiento}
               </p>
             </div>
@@ -109,7 +109,7 @@ export function ProblemaSection({
                       borderBottom: i < datos.length - 1 ? "1px solid rgba(255,240,220,0.07)" : "none",
                     }}
                   >
-                    <span style={{ color: "rgba(255,240,220,0.55)" }}>{d.label}</span>
+                    <span style={{ color: "rgba(255,255,255,0.75)" }}>{d.label}</span>
                     <span className="font-bold" style={{ color: "#FFD4A8" }}>{d.value}</span>
                   </div>
                 ))}
@@ -167,7 +167,7 @@ export function ProblemaSection({
                   style={{
                     background: "rgba(0,0,0,0.3)",
                     borderBottom: "1px solid rgba(255,240,220,0.12)",
-                    color: "rgba(255,240,220,0.5)",
+                    color: "rgba(255,255,255,0.7)",
                   }}
                 >
                   <span>Indicador</span>
@@ -182,7 +182,7 @@ export function ProblemaSection({
                       borderBottom: i < results.length - 1 ? "1px solid rgba(255,240,220,0.07)" : "none",
                     }}
                   >
-                    <span style={{ color: "rgba(255,240,220,0.6)" }}>{r.label}</span>
+                    <span style={{ color: "rgba(255,255,255,0.85)" }}>{r.label}</span>
                     <span className="font-bold" style={{ color: "#FFD4A8" }}>{r.value}</span>
                   </div>
                 ))}
@@ -194,7 +194,7 @@ export function ProblemaSection({
               style={{
                 background: "rgba(0,0,0,0.15)",
                 border: "1px solid rgba(255,240,220,0.1)",
-                color: "rgba(255,240,220,0.6)",
+                color: "rgba(255,255,255,0.85)",
               }}
             >
               {interpretacion}

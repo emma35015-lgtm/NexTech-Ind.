@@ -8,6 +8,7 @@ const members = [
   { num: "02", name: "Jessica Juárez",   role: "Modelos Sin Déficit" },
   { num: "03", name: "Regina González",  role: "Modelos Con Déficit" },
   { num: "04", name: "Regina Elorza",    role: "Análisis Comparativo" },
+  { num: "05", name: "Andrea Piña",      role: "Tabla Comparativa" },
 ];
 
 export function TeamSection() {
@@ -47,7 +48,7 @@ export function TeamSection() {
           style={{ background: "rgba(255,240,220,0.4)" }}
         />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {members.map((m, i) => (
             <motion.div
               key={m.num}
@@ -86,7 +87,7 @@ export function TeamSection() {
                   <div className="text-sm font-bold mb-1" style={{ color: "#FFF0DC" }}>
                     {m.name}
                   </div>
-                  <div className="text-[10px] tracking-[0.1em] uppercase" style={{ color: "rgba(255,240,220,0.45)" }}>
+                  <div className="text-[10px] tracking-[0.1em] uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
                     {m.role}
                   </div>
                 </div>

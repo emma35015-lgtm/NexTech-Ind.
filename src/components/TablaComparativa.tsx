@@ -68,7 +68,7 @@ export function TablaComparativa() {
             <thead>
               <tr style={{ background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(255,240,220,0.15)" }}>
                 <th className="px-4 py-3 text-left text-[10px] tracking-[0.12em] uppercase"
-                  style={{ color: "rgba(255,240,220,0.5)", width: "28%" }}>
+                  style={{ color: "rgba(255,255,255,0.7)", width: "28%" }}>
                   Indicador
                 </th>
                 {cols.map((c) => (
@@ -97,7 +97,7 @@ export function TablaComparativa() {
                     borderBottom: "1px solid rgba(255,240,220,0.06)",
                   }}
                 >
-                  <td className="px-4 py-3" style={{ color: "rgba(255,240,220,0.65)" }}>
+                  <td className="px-4 py-3" style={{ color: "rgba(255,255,255,0.88)" }}>
                     {row.label}
                   </td>
                   {cols.map((c) => {
@@ -133,7 +133,7 @@ export function TablaComparativa() {
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: item.color }} />
-              <span className="text-[10px] tracking-[0.08em]" style={{ color: "rgba(255,240,220,0.45)" }}>
+              <span className="text-[10px] tracking-[0.08em]" style={{ color: "rgba(255,255,255,0.65)" }}>
                 {item.label}
               </span>
             </div>

@@ -48,12 +48,12 @@ body {
 
 .formula-block {
   background: rgba(0, 0, 0, 0.28);
-  border-left: 3px solid rgba(255, 240, 220, 0.5);
+  border-left: 3px solid rgba(255, 240, 220, 0.6);
   padding: 1rem 1.25rem;
   font-family: 'Space Mono', monospace;
   font-size: 0.78rem;
   line-height: 1.9;
-  color: #FFF0DC;
+  color: #FFFFFF;
   overflow-x: auto;
 }
 
@@ -61,7 +61,7 @@ body {
   font-size: 0.62rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 240, 220, 0.5);
+  color: rgba(255, 240, 220, 0.72);
   font-family: 'Space Mono', monospace;
 }
 

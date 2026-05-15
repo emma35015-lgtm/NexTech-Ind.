@@ -44,7 +44,7 @@ export function MarcoTeorico() {
           initial="hidden" whileInView="visible" viewport={{ once: true }}
           variants={fadeUp}
           className="text-sm leading-relaxed max-w-3xl mb-12"
-          style={{ color: "rgba(255,240,220,0.75)" }}
+          style={{ color: "rgba(255,255,255,0.9)" }}
         >
           El inventario representa el mayor de los activos circulantes en NexTech Industries y
           comprende todos los insumos críticos para la fabricación de cohetes y la ejecución de
@@ -65,7 +65,7 @@ export function MarcoTeorico() {
               className="px-5 py-3 flex items-center justify-between"
               style={{ background: "rgba(0,0,0,0.25)", borderBottom: "1px solid rgba(255,240,220,0.15)" }}
             >
-              <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "rgba(255,240,220,0.5)" }}>
+              <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
                 Modelo 01
               </span>
               <span className="text-sm font-bold tracking-[0.1em] uppercase" style={{ color: "#FFF0DC" }}>
@@ -82,7 +82,7 @@ export function MarcoTeorico() {
                     "El reemplazo es instantáneo",
                     "Todos los coeficientes de costo son constantes",
                   ].map((s, i) => (
-                    <div key={i} className="flex items-start gap-3 text-xs" style={{ color: "rgba(255,240,220,0.75)" }}>
+                    <div key={i} className="flex items-start gap-3 text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
                       <span style={{ color: "#C4A07A", flexShrink: 0 }}>0{i + 1}</span>
                       <span>{s}</span>
                     </div>
@@ -113,7 +113,7 @@ export function MarcoTeorico() {
               className="px-5 py-3 flex items-center justify-between"
               style={{ background: "rgba(0,0,0,0.25)", borderBottom: "1px solid rgba(255,240,220,0.15)" }}
             >
-              <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "rgba(255,240,220,0.5)" }}>
+              <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
                 Modelo 02
               </span>
               <span className="text-sm font-bold tracking-[0.1em] uppercase" style={{ color: "#FFF0DC" }}>
@@ -130,7 +130,7 @@ export function MarcoTeorico() {
                     "S = Número de unidades agotadas",
                     "IM = Inventario Máximo = Q − S",
                   ].map((s, i) => (
-                    <div key={i} className="flex items-start gap-3 text-xs" style={{ color: "rgba(255,240,220,0.75)" }}>
+                    <div key={i} className="flex items-start gap-3 text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
                       <span style={{ color: "#C4A07A", flexShrink: 0 }}>0{i + 1}</span>
                       <span>{s}</span>
                     </div>
@@ -161,7 +161,7 @@ export function MarcoTeorico() {
           style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,240,220,0.1)" }}
         >
           <div className="tva-label mb-3">Variables</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 text-[11px]" style={{ color: "rgba(255,240,220,0.65)" }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 text-[11px]" style={{ color: "rgba(255,255,255,0.88)" }}>
             {[
               ["Q", "Cantidad Óptima"],
               ["C₁", "Costo Unitario"],
