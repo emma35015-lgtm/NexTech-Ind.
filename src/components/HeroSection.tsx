@@ -4,16 +4,51 @@ import { motion } from "framer-motion";
 import { ParticleBackground } from "./ParticleBackground";
 import { ChevronDown } from "lucide-react";
 
+/* Twinkling stars config */
+const STARS = Array.from({ length: 40 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  r: 0.8 + Math.random() * 1.4,
+  delay: Math.random() * 4,
+  dur: 2 + Math.random() * 3,
+}));
+
 export function HeroSection() {
   return (
     <section
       id="hero"
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden grid-bg"
+      style={{ paddingTop: "30px" }} /* account for ticker */
     >
       <ParticleBackground />
 
+      {/* Twinkling stars (SVG overlay) */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {STARS.map((s) => (
+          <motion.circle
+            key={s.id}
+            cx={`${s.x}%`}
+            cy={`${s.y}%`}
+            r={s.r}
+            fill="#FFF0DC"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.7, 0.2, 0.8, 0] }}
+            transition={{
+              delay: s.delay,
+              duration: s.dur,
+              repeat: Infinity,
+              repeatType: "mirror",
+            }}
+          />
+        ))}
+      </svg>
+
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center text-center px-6 gap-8">
+      <div className="relative flex flex-col items-center text-center px-6 gap-8" style={{ zIndex: 2 }}>
         {/* Course label */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -24,38 +59,83 @@ export function HeroSection() {
           Universidad La Salle Bajío &nbsp;·&nbsp; Ingeniería Industrial &nbsp;·&nbsp; Mayo 2026
         </motion.div>
 
-        {/* Main title */}
+        {/* Logo + orbit */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, type: "spring", damping: 18 }}
-          className="flex flex-col items-center gap-2"
+          className="relative flex flex-col items-center gap-2"
         >
+          {/* Orbit ellipse */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <motion.div
+              className="relative"
+              style={{
+                width: "340px",
+                height: "120px",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+            >
+              {/* Ellipse trace */}
+              <svg
+                viewBox="0 0 340 120"
+                className="absolute inset-0 w-full h-full"
+                style={{ overflow: "visible" }}
+              >
+                <ellipse
+                  cx="170"
+                  cy="60"
+                  rx="168"
+                  ry="58"
+                  fill="none"
+                  stroke="rgba(255,240,220,0.08)"
+                  strokeWidth="1"
+                  strokeDasharray="4 6"
+                />
+              </svg>
+              {/* Orbiting dot */}
+              <div
+                className="absolute"
+                style={{
+                  top: "1px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: "#FFD4A8",
+                  boxShadow: "0 0 12px #FFD4A8, 0 0 4px #FFD4A8",
+                }}
+              />
+            </motion.div>
+          </div>
+
           <h1
             className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-[0.06em] uppercase leading-none"
-            style={{ color: "#FFF0DC", textShadow: "0 2px 40px rgba(0,0,0,0.3)" }}
+            style={{ color: "#FFFFFF", textShadow: "0 2px 50px rgba(0,0,0,0.35)" }}
           >
             NexTech
           </h1>
           <div
             className="text-xl md:text-3xl tracking-[0.35em] uppercase font-normal"
-            style={{ color: "rgba(255,255,255,0.85)" }}
+            style={{ color: "rgba(255,255,255,0.65)" }}
           >
             Industries
           </div>
         </motion.div>
 
-        {/* Horizontal rule with dots */}
+        {/* Horizontal rule */}
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ delay: 0.7, duration: 0.8 }}
           className="w-64 md:w-96 flex items-center gap-3"
         >
-          <div className="flex-1 h-px" style={{ background: "rgba(255,240,220,0.35)" }} />
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.72)" }} />
-          <div className="w-1 h-1 rounded-full" style={{ background: "rgba(255,240,220,0.3)" }} />
-          <div className="flex-1 h-px" style={{ background: "rgba(255,240,220,0.35)" }} />
+          <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.45)" }} />
+          <div className="w-1 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.25)" }} />
+          <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
         </motion.div>
 
         {/* Subtitle */}
@@ -67,14 +147,11 @@ export function HeroSection() {
         >
           <p
             className="text-lg md:text-2xl tracking-[0.12em] uppercase font-bold"
-            style={{ color: "#FFF0DC" }}
+            style={{ color: "#FFFFFF" }}
           >
             Modelos de Inventario
           </p>
-          <p
-            className="text-sm md:text-base tracking-[0.1em]"
-            style={{ color: "rgba(255,255,255,0.82)" }}
-          >
+          <p className="text-sm md:text-base tracking-[0.1em]" style={{ color: "rgba(255,255,255,0.7)" }}>
             Compras Sin Déficit &nbsp;/&nbsp; Compras Con Déficit
           </p>
         </motion.div>
@@ -95,9 +172,9 @@ export function HeroSection() {
               key={tag}
               className="text-[10px] tracking-[0.15em] uppercase px-3 py-1 rounded-full"
               style={{
-                background: "rgba(0,0,0,0.2)",
-                border: "1px solid rgba(255,240,220,0.2)",
-                color: "rgba(255,240,220,0.7)",
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "rgba(255,255,255,0.8)",
               }}
             >
               {tag}
@@ -112,12 +189,8 @@ export function HeroSection() {
           transition={{ delay: 1.3 }}
           className="flex flex-wrap justify-center gap-x-6 gap-y-1 mt-1"
         >
-          {["Emmanuel", "Jessica Juárez", "Regina González", "Regina Elorza"].map((name) => (
-            <span
-              key={name}
-              className="text-xs tracking-[0.08em]"
-              style={{ color: "rgba(255,255,255,0.72)" }}
-            >
+          {["Emmanuel", "Jessica Juárez", "Regina González", "Regina Elorza", "Andrea Piña"].map((name) => (
+            <span key={name} className="text-xs tracking-[0.08em]" style={{ color: "rgba(255,255,255,0.55)" }}>
               {name}
             </span>
           ))}
@@ -130,18 +203,15 @@ export function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2 }}
+        style={{ zIndex: 2 }}
         onClick={() => document.getElementById("teoria")?.scrollIntoView({ behavior: "smooth" })}
       >
         <span className="tva-label text-[9px]">Desplazar</span>
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <ChevronDown size={16} style={{ color: "rgba(255,240,220,0.4)" }} />
+        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+          <ChevronDown size={16} style={{ color: "rgba(255,255,255,0.4)" }} />
         </motion.div>
       </motion.div>
 
-      {/* Bottom border */}
       <div className="section-divider absolute bottom-0 left-0 right-0" />
     </section>
   );

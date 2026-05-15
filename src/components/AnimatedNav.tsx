@@ -66,7 +66,7 @@ export function AnimatedNav() {
   };
 
   return (
-    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
+    <div className="fixed top-9 left-1/2 -translate-x-1/2 z-50">
       <motion.nav
         initial={{ y: -80, opacity: 0 }}
         animate={isExpanded ? "expanded" : "collapsed"}

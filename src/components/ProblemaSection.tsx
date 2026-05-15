@@ -2,10 +2,15 @@
 
 import { motion } from "framer-motion";
 import { SinDeficitChart, ConDeficitChart } from "./InventoryChart";
+import { CountUp } from "./AnimatedCounter";
 
 interface ResultRow {
   label: string;
   value: string;
+  count?: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
 }
 
 interface ProblemaBaseProps {
@@ -179,11 +184,21 @@ export function ProblemaSection({
                     className="flex items-center justify-between px-4 py-2.5 text-xs"
                     style={{
                       background: i % 2 === 0 ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.08)",
-                      borderBottom: i < results.length - 1 ? "1px solid rgba(255,240,220,0.07)" : "none",
+                      borderBottom: i < results.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                     }}
                   >
                     <span style={{ color: "rgba(255,255,255,0.85)" }}>{r.label}</span>
-                    <span className="font-bold" style={{ color: "#FFD4A8" }}>{r.value}</span>
+                    <span className="font-bold" style={{ color: "#FFD4A8" }}>
+                      {r.count !== undefined ? (
+                        <CountUp
+                          to={r.count}
+                          prefix={r.prefix}
+                          suffix={r.suffix}
+                          decimals={r.decimals}
+                          style={{ color: "#FFD4A8" }}
+                        />
+                      ) : r.value}
+                    </span>
                   </div>
                 ))}
               </div>
