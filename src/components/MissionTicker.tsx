@@ -45,23 +45,23 @@ export function MissionTicker() {
     <div
       className="fixed top-0 left-0 right-0 z-[70] flex items-center overflow-hidden"
       style={{
-        height: "30px",
+        height: "46px",
         background: "#0F0500",
-        borderBottom: "1px solid rgba(196,82,42,0.4)",
+        borderBottom: "2px solid rgba(196,82,42,0.55)",
       }}
     >
       {/* Live indicator */}
       <div
-        className="flex-shrink-0 flex items-center gap-2 px-3 border-r"
-        style={{ borderColor: "rgba(196,82,42,0.35)", height: "100%" }}
+        className="flex-shrink-0 flex items-center gap-2.5 px-4 border-r"
+        style={{ borderColor: "rgba(196,82,42,0.4)", height: "100%" }}
       >
         <motion.div
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ background: "#C4522A" }}
+          className="w-2.5 h-2.5 rounded-full"
+          style={{ background: "#C4522A", boxShadow: "0 0 6px #C4522A" }}
           animate={{ opacity: [1, 0.2, 1] }}
           transition={{ duration: 1.2, repeat: Infinity }}
         />
-        <span className="text-[9px] tracking-[0.2em] font-bold" style={{ color: "#C4522A" }}>
+        <span className="text-sm tracking-[0.25em] font-bold" style={{ color: "#C4522A" }}>
           LIVE
         </span>
       </div>
@@ -72,14 +72,13 @@ export function MissionTicker() {
           className="flex items-center whitespace-nowrap"
           animate={{ x: ["0%", "-50%"] }}
           transition={{ duration: 40, ease: "linear", repeat: Infinity }}
-          style={{ height: "30px" }}
+          style={{ height: "46px" }}
         >
-          {/* Duplicate for seamless loop */}
           {[0, 1].map((n) => (
             <span
               key={n}
-              className="text-[9px] tracking-[0.15em] uppercase"
-              style={{ color: "rgba(255,220,180,0.75)", paddingRight: "0.5rem" }}
+              className="text-[11px] tracking-[0.18em] uppercase"
+              style={{ color: "rgba(255,220,180,0.85)", paddingRight: "0.5rem" }}
             >
               {tickerText}
             </span>
@@ -89,22 +88,22 @@ export function MissionTicker() {
 
       {/* Mission clock */}
       <div
-        className="flex-shrink-0 flex items-center gap-4 px-3 border-l"
-        style={{ borderColor: "rgba(196,82,42,0.35)", height: "100%" }}
+        className="flex-shrink-0 flex items-center gap-4 px-4 border-l"
+        style={{ borderColor: "rgba(196,82,42,0.4)", height: "100%" }}
       >
         <div className="flex items-center gap-1.5">
-          <span className="text-[8px] tracking-[0.15em] uppercase" style={{ color: "rgba(255,200,120,0.5)" }}>
+          <span className="text-[10px] tracking-[0.18em] uppercase" style={{ color: "rgba(255,200,120,0.55)" }}>
             T+
           </span>
-          <span className="text-[9px] font-bold tabular-nums" style={{ color: "#FFD4A8" }}>
+          <span className="text-sm font-bold tabular-nums" style={{ color: "#FFD4A8" }}>
             {h}:{m}:{s}
           </span>
         </div>
         <div
-          className="hidden sm:block w-px h-3"
-          style={{ background: "rgba(196,82,42,0.35)" }}
+          className="hidden sm:block w-px h-4"
+          style={{ background: "rgba(196,82,42,0.4)" }}
         />
-        <span className="hidden sm:block text-[9px] font-bold tabular-nums" style={{ color: "rgba(255,200,120,0.6)" }}>
+        <span className="hidden sm:block text-sm font-bold tabular-nums" style={{ color: "rgba(255,200,120,0.65)" }}>
           {time}
         </span>
       </div>

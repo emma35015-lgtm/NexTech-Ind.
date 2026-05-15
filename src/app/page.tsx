@@ -24,7 +24,7 @@ export default function Home() {
           <MissionTicker />
           <AnimatedNav />
 
-          <main className="relative" style={{ paddingTop: "30px" }}>
+          <main className="relative" style={{ paddingTop: "46px" }}>
             <HeroSection />
 
             <RocketSeparator label="Marco Teórico" />

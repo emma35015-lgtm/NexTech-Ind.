@@ -118,7 +118,7 @@ export function HeroSection() {
     <section
       id="hero"
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden grid-bg"
-      style={{ paddingTop: "30px" }}
+      style={{ paddingTop: "46px" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
