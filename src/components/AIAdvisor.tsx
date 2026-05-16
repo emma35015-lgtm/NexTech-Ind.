@@ -192,40 +192,65 @@ async function* streamGemini(apiKey: string, prompt: string) {
   }
 }
 
-function PixelRobot() {
+function MissMinutes({ small = false }: { small?: boolean }) {
+  const w = small ? 64 : 88;
+  const h = small ? 82 : 112;
+  const s = small ? 64 / 88 : 1;
   return (
     <svg
-      width="88"
-      height="72"
-      viewBox="0 0 88 72"
-      className="pixel-robot"
+      width={w}
+      height={h}
+      viewBox="0 0 88 112"
+      className="miss-minutes"
       style={{ imageRendering: "pixelated" }}
     >
       {/* Antenna */}
-      <rect x="40" y="0" width="8" height="8" fill="#C4522A" />
-      {/* Head */}
-      <rect x="24" y="8" width="40" height="28" fill="#C4522A" />
+      <rect x="36" y="0"  width="16" height="8"  fill="#C4522A" />
+
+      {/* Clock body */}
+      <rect x="24" y="8"  width="40" height="8"  fill="#C4522A" />
+      <rect x="16" y="16" width="56" height="8"  fill="#C4522A" />
+      <rect x="8"  y="24" width="72" height="52" fill="#C4522A" />
+      <rect x="16" y="76" width="56" height="8"  fill="#C4522A" />
+      <rect x="24" y="84" width="40" height="8"  fill="#C4522A" />
+
+      {/* Tick marks — 12, 9, 3, 6 */}
+      <rect x="36" y="8"  width="16" height="6"  fill="#7A2D10" />
+      <rect x="8"  y="44" width="6"  height="14" fill="#7A2D10" />
+      <rect x="74" y="44" width="6"  height="14" fill="#7A2D10" />
+      <rect x="36" y="80" width="16" height="6"  fill="#7A2D10" />
+
+      {/* Eyebrows (arched) */}
+      <rect x="12" y="29" width="8"  height="4"  fill="#7A2D10" />
+      <rect x="20" y="26" width="14" height="4"  fill="#7A2D10" />
+      <rect x="54" y="26" width="14" height="4"  fill="#7A2D10" />
+      <rect x="68" y="29" width="8"  height="4"  fill="#7A2D10" />
+
       {/* Eyes */}
-      <rect x="32" y="16" width="10" height="10" fill="#0A0300" />
-      <rect x="46" y="16" width="10" height="10" fill="#0A0300" />
-      {/* Mouth */}
-      <rect x="32" y="30" width="4" height="4" fill="#0A0300" />
-      <rect x="40" y="30" width="4" height="4" fill="#0A0300" />
-      <rect x="52" y="30" width="4" height="4" fill="#0A0300" />
-      {/* Neck */}
-      <rect x="36" y="36" width="16" height="4" fill="#A03D1A" />
-      {/* Body */}
-      <rect x="16" y="40" width="56" height="20" fill="#C4522A" />
-      {/* Chest detail */}
-      <rect x="32" y="44" width="24" height="10" fill="#A03D1A" />
-      <rect x="34" y="46" width="6" height="6" fill="#FFD4A8" />
-      <rect x="48" y="46" width="6" height="6" fill="#FFD4A8" />
+      <rect x="12" y="34" width="24" height="18" fill="#0A0300" />
+      <rect x="52" y="34" width="24" height="18" fill="#0A0300" />
+      {/* Highlights */}
+      <rect x="15" y="37" width="8"  height="8"  fill="#FFF0DC" />
+      <rect x="55" y="37" width="8"  height="8"  fill="#FFF0DC" />
+
+      {/* Smile */}
+      <rect x="14" y="60" width="8"  height="12" fill="#0A0300" />
+      <rect x="22" y="56" width="44" height="8"  fill="#0A0300" />
+      <rect x="66" y="60" width="8"  height="12" fill="#0A0300" />
+      {/* Teeth */}
+      <rect x="22" y="60" width="44" height="6"  fill="#FFF0DC" />
+
       {/* Arms */}
-      <rect x="4" y="40" width="12" height="14" fill="#C4522A" />
-      <rect x="72" y="40" width="12" height="14" fill="#C4522A" />
+      <rect x="0"  y="28" width="8"  height="20" fill="#C4522A" />
+      <rect x="80" y="28" width="8"  height="20" fill="#C4522A" />
+
       {/* Legs */}
-      <rect x="22" y="60" width="14" height="10" fill="#A03D1A" />
-      <rect x="52" y="60" width="14" height="10" fill="#A03D1A" />
+      <rect x="24" y="92" width="14" height="14" fill="#A03D1A" />
+      <rect x="50" y="92" width="14" height="14" fill="#A03D1A" />
+
+      {/* Feet */}
+      <rect x="16" y="106" width="20" height="8" fill="#C4522A" />
+      <rect x="52" y="106" width="20" height="8" fill="#C4522A" />
     </svg>
   );
 }
@@ -371,9 +396,12 @@ export function AIAdvisor() {
     } catch (err) {
       const raw = err instanceof Error ? err.message : "Error de conexión";
       let msg = `ERR: ${raw}`;
-      if (raw.includes("429")) msg = "ERR 429: Límite de solicitudes excedido. Espera ~20 segundos e intenta de nuevo.";
-      else if (raw.includes("403")) msg = "ERR 403: Clave API inválida. Verifica tu clave en aistudio.google.com.";
-      else if (raw.includes("404")) msg = "ERR 404: Modelo no disponible. Verifica que el modelo esté activo en tu proyecto.";
+      if (raw.includes("429")) {
+        const delayMatch = raw.match(/"retryDelay":\s*"(\d+)s"/);
+        const secs = delayMatch ? delayMatch[1] : "30";
+        msg = `ERR 429: Límite de solicitudes excedido. Espera ${secs}s e intenta de nuevo.`;
+      } else if (raw.includes("403")) msg = "ERR 403: Clave API inválida. Verifica tu clave en aistudio.google.com.";
+      else if (raw.includes("404")) msg = "ERR 404: Modelo no disponible en tu proyecto. Intenta con otra clave.";
       setErrorMsg(msg);
       setPhase("error");
     }
@@ -511,19 +539,30 @@ export function AIAdvisor() {
             className="relative z-10 p-4 md:p-6 space-y-5"
             style={{ fontFamily: "'Space Mono', monospace" }}
           >
-            {/* System status lines */}
-            <div className="space-y-1.5 text-xs">
-              <div style={{ color: "rgba(255,212,168,0.45)" }}>
-                &gt;_ SISTEMA &nbsp;&nbsp;&nbsp; NexTech AI Advisor v2.1
+            {/* Miss Minutes + System status */}
+            <div className="flex items-start gap-5">
+              <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                <MissMinutes small />
+                <div
+                  className="text-[8px] tracking-[0.18em] blink"
+                  style={{ color: "rgba(196,82,42,0.7)", fontFamily: "'Space Mono', monospace" }}
+                >
+                  MISS MINUTES
+                </div>
               </div>
-              <div style={{ color: "rgba(255,212,168,0.45)" }}>
-                &gt;_ MOTOR &nbsp;&nbsp;&nbsp;&nbsp; EOQ + Gemini 2.5 Flash
-              </div>
-              <div style={{ color: keyConnected ? "#4ADE80" : "#FFD4A8" }}>
-                &gt;_ ESTADO &nbsp;&nbsp;&nbsp;{" "}
-                {keyConnected
-                  ? "● AUTENTICADO — GEMINI 2.5 FLASH ✓"
-                  : <><span className="blink">○</span>{" ESPERANDO AUTENTICACIÓN..."}</>}
+              <div className="space-y-1.5 text-xs flex-1 pt-1">
+                <div style={{ color: "rgba(255,212,168,0.45)" }}>
+                  &gt;_ SISTEMA &nbsp;&nbsp; NexTech AI Advisor v2.1
+                </div>
+                <div style={{ color: "rgba(255,212,168,0.45)" }}>
+                  &gt;_ MOTOR &nbsp;&nbsp;&nbsp; EOQ + Gemini 2.5 Flash
+                </div>
+                <div style={{ color: keyConnected ? "#4ADE80" : "#FFD4A8" }}>
+                  &gt;_ ESTADO &nbsp;&nbsp;{" "}
+                  {keyConnected
+                    ? "● AUTENTICADO ✓"
+                    : <><span className="blink">○</span>{" ESPERANDO CLAVE..."}</>}
+                </div>
               </div>
             </div>
 
@@ -541,9 +580,14 @@ export function AIAdvisor() {
                 >
                   <div className="space-y-1 text-xs">
                     <div style={{ color: "#FFD4A8" }}>&gt;_ INGRESA CLAVE API GEMINI:</div>
-                    <div style={{ color: "rgba(255,212,168,0.4)", fontSize: "0.7rem" }}>
-                      Clave gratis en aistudio.google.com → Get API key
-                    </div>
+                    <a
+                      href="https://aistudio.google.com/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#FFD4A8", fontSize: "0.7rem", textDecoration: "underline", textUnderlineOffset: "3px" }}
+                    >
+                      aistudio.google.com → Get API key ↗
+                    </a>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm flex-shrink-0" style={{ color: "#C4522A" }}>&gt;&gt;</span>
@@ -903,7 +947,7 @@ export function AIAdvisor() {
                       exit={{ opacity: 0, transition: { duration: 0.3 } }}
                       className="flex flex-col items-center gap-3 py-4"
                     >
-                      <PixelRobot />
+                      <MissMinutes />
                       <div
                         className="text-[10px] tracking-[0.2em] uppercase blink"
                         style={{ color: "#C4522A", fontFamily: "'Space Mono', monospace" }}

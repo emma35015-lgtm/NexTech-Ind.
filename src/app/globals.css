@@ -169,3 +169,14 @@ body {
   100% { transform: translateY(0); }
 }
 .pixel-robot { animation: pixelWalk 0.6s ease-in-out infinite; }
+
+/* Miss Minutes pendulum animation */
+@keyframes tickTock {
+  0%   { transform: rotate(-5deg); }
+  50%  { transform: rotate(5deg); }
+  100% { transform: rotate(-5deg); }
+}
+.miss-minutes {
+  animation: tickTock 1.4s ease-in-out infinite;
+  transform-origin: center 4%;
+}
