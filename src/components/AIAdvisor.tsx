@@ -149,7 +149,7 @@ function buildSteps(form: FormValues, model: ModelType, result: EOQResult): stri
 }
 
 async function* streamGemini(apiKey: string, prompt: string) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -369,7 +369,12 @@ export function AIAdvisor() {
       setAiDone(true);
       setPhase("done");
     } catch (err) {
-      setErrorMsg(`ERR: ${err instanceof Error ? err.message : "Error de conexión"}`);
+      const raw = err instanceof Error ? err.message : "Error de conexión";
+      let msg = `ERR: ${raw}`;
+      if (raw.includes("429")) msg = "ERR 429: Límite de solicitudes excedido. Espera ~20 segundos e intenta de nuevo.";
+      else if (raw.includes("403")) msg = "ERR 403: Clave API inválida. Verifica tu clave en aistudio.google.com.";
+      else if (raw.includes("404")) msg = "ERR 404: Modelo no disponible. Verifica que el modelo esté activo en tu proyecto.";
+      setErrorMsg(msg);
       setPhase("error");
     }
   }
@@ -413,7 +418,7 @@ export function AIAdvisor() {
             className="tva-label mb-4"
             style={{ color: "rgba(255,212,168,0.6)" }}
           >
-            Motor EOQ + Claude AI
+            Motor EOQ + Gemini AI
           </motion.div>
           <motion.div
             initial={{ scaleX: 0 }}
@@ -425,123 +430,225 @@ export function AIAdvisor() {
           />
         </div>
 
-        {/* API Key Gate */}
-        <AnimatePresence mode="wait">
-          {!keyConnected ? (
-            <motion.div
-              key="gate"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              className="terminal-panel p-5 md:p-6 rounded-sm"
-            >
-              <div className="tva-label mb-4">&gt;_ AUTENTICACIÓN REQUERIDA</div>
-              <p className="text-xs md:text-sm mb-4" style={{ color: "rgba(255,255,255,0.75)" }}>
-                Ingresa tu clave de API de Google Gemini (gratis en{" "}
-                <span style={{ color: "#FFD4A8" }}>aistudio.google.com</span>
-                {" → "}<span style={{ color: "#FFD4A8" }}>Get API key</span>).
-                La clave se guarda solo en esta sesión del navegador.
-              </p>
-              <div className="flex flex-col md:flex-row gap-3">
-                <input
-                  type="password"
-                  className="terminal-input flex-1"
-                  placeholder="AIzaSy..."
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && connectKey()}
-                />
-                <button
-                  onClick={connectKey}
-                  className="text-[11px] tracking-[0.2em] uppercase px-5 py-2 rounded-sm font-bold transition-all whitespace-nowrap"
-                  style={{ background: "#C4522A", color: "#0A0300", border: "1px solid #C4522A" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#FFD4A8"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#C4522A"; }}
-                >
-                  &gt;&gt; CONECTAR
-                </button>
-              </div>
-              {errorMsg && (
-                <div className="mt-3 text-xs" style={{ color: "#FF7050", fontFamily: "'Space Mono', monospace" }}>
-                  {errorMsg}
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="connected"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap items-center gap-3 text-xs"
-            >
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: "#4ADE80", boxShadow: "0 0 6px #4ADE80" }}
-              />
-              <span className="tva-label" style={{ color: "#4ADE80" }}>
-                CONECTADO — GEMINI 2.0 FLASH ✓
-              </span>
-              <button
-                onClick={() => { setKeyConnected(false); setApiKey(""); sessionStorage.removeItem("nt_api_key"); }}
-                className="tva-label underline"
-                style={{ color: "rgba(255,255,255,0.35)", cursor: "pointer", background: "none", border: "none" }}
-              >
-                desconectar
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* TVA Auth + Guide Terminal */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.15 }}
+          className="relative rounded-sm overflow-hidden scanlines"
+          style={{
+            background: "#0A0300",
+            border: "2px solid #C4522A",
+            boxShadow: "0 0 18px rgba(196,82,42,0.4), inset 0 0 30px rgba(196,82,42,0.05)",
+          }}
+        >
+          {/* CRT inner grid */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: [
+                "repeating-linear-gradient(rgba(196,82,42,0.06) 0px, rgba(196,82,42,0.06) 1px, transparent 1px, transparent 40px)",
+                "repeating-linear-gradient(90deg, rgba(196,82,42,0.06) 0px, rgba(196,82,42,0.06) 1px, transparent 1px, transparent 40px)",
+              ].join(", "),
+            }}
+          />
 
-        {/* How-to guide */}
-        <AnimatePresence>
-          {keyConnected && (
-            <motion.div
-              key="howto"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="terminal-panel p-4 md:p-5 rounded-sm"
+          {/* Corner brackets */}
+          {(["┌", "┐", "└", "┘"] as const).map((ch, i) => (
+            <span
+              key={i}
+              className="absolute text-sm pointer-events-none select-none"
+              style={{
+                color: "rgba(196,82,42,0.5)",
+                top: i < 2 ? 6 : undefined,
+                bottom: i >= 2 ? 6 : undefined,
+                left: i % 2 === 0 ? 8 : undefined,
+                right: i % 2 === 1 ? 8 : undefined,
+              }}
             >
-              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <div className="tva-label">&gt;_ GUÍA DE USO</div>
-                <button
-                  onClick={loadExample}
-                  className="text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 rounded-sm transition-all"
-                  style={{
-                    border: "1px solid rgba(196,82,42,0.6)",
-                    color: "#FFD4A8",
-                    background: "rgba(196,82,42,0.15)",
-                    fontFamily: "'Space Mono', monospace",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.35)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.15)"; }}
-                >
-                  [ CARGAR EJEMPLO ]
-                </button>
+              {ch}
+            </span>
+          ))}
+
+          {/* Header stripe */}
+          <div
+            className="relative z-10 flex items-center justify-between px-4 h-9"
+            style={{ background: "#C4522A" }}
+          >
+            <span
+              className="text-[10px] tracking-[0.18em] uppercase font-bold hidden md:block"
+              style={{ color: "#0A0300", fontFamily: "'Space Mono', monospace" }}
+            >
+              ████ NEXTECH AUTH TERMINAL ████
+            </span>
+            <span
+              className="text-[10px] tracking-[0.18em] uppercase font-bold md:hidden"
+              style={{ color: "#0A0300", fontFamily: "'Space Mono', monospace" }}
+            >
+              NEXTECH AUTH
+            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{
+                  background: keyConnected ? "#4ADE80" : "rgba(0,0,0,0.35)",
+                  boxShadow: keyConnected ? "0 0 6px #4ADE80" : "none",
+                  border: keyConnected ? "none" : "1px solid rgba(0,0,0,0.5)",
+                }}
+              />
+              <span
+                className="text-[9px] tracking-[0.15em] uppercase"
+                style={{ color: "#0A0300", fontFamily: "'Space Mono', monospace" }}
+              >
+                {keyConnected ? "ONLINE" : "OFFLINE"}
+              </span>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div
+            className="relative z-10 p-4 md:p-6 space-y-5"
+            style={{ fontFamily: "'Space Mono', monospace" }}
+          >
+            {/* System status lines */}
+            <div className="space-y-1.5 text-xs">
+              <div style={{ color: "rgba(255,212,168,0.45)" }}>
+                &gt;_ SISTEMA &nbsp;&nbsp;&nbsp; NexTech AI Advisor v2.1
               </div>
+              <div style={{ color: "rgba(255,212,168,0.45)" }}>
+                &gt;_ MOTOR &nbsp;&nbsp;&nbsp;&nbsp; EOQ + Gemini 2.5 Flash
+              </div>
+              <div style={{ color: keyConnected ? "#4ADE80" : "#FFD4A8" }}>
+                &gt;_ ESTADO &nbsp;&nbsp;&nbsp;{" "}
+                {keyConnected
+                  ? "● AUTENTICADO — GEMINI 2.5 FLASH ✓"
+                  : <><span className="blink">○</span>{" ESPERANDO AUTENTICACIÓN..."}</>}
+              </div>
+            </div>
+
+            <div className="h-px" style={{ background: "rgba(196,82,42,0.3)" }} />
+
+            {/* Auth section */}
+            <AnimatePresence mode="wait">
+              {!keyConnected ? (
+                <motion.div
+                  key="auth-input"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-3"
+                >
+                  <div className="space-y-1 text-xs">
+                    <div style={{ color: "#FFD4A8" }}>&gt;_ INGRESA CLAVE API GEMINI:</div>
+                    <div style={{ color: "rgba(255,212,168,0.4)", fontSize: "0.7rem" }}>
+                      Clave gratis en aistudio.google.com → Get API key
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm flex-shrink-0" style={{ color: "#C4522A" }}>&gt;&gt;</span>
+                    <input
+                      type="password"
+                      className="terminal-input flex-1"
+                      placeholder="AIzaSy..."
+                      value={keyInput}
+                      onChange={(e) => setKeyInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && connectKey()}
+                    />
+                    <button
+                      onClick={connectKey}
+                      className="text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 whitespace-nowrap font-bold transition-all"
+                      style={{ background: "#C4522A", color: "#0A0300", border: "1px solid #C4522A", cursor: "pointer" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#FFD4A8"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#C4522A"; }}
+                    >
+                      CONECTAR
+                    </button>
+                  </div>
+                  {errorMsg && (
+                    <div className="text-xs" style={{ color: "#FF7050" }}>{errorMsg}</div>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="auth-ok"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-2 text-xs"
+                >
+                  <div style={{ color: "#4ADE80" }}>&gt;&gt; ACCESO CONCEDIDO — SESIÓN ACTIVA</div>
+                  <button
+                    onClick={() => { setKeyConnected(false); setApiKey(""); sessionStorage.removeItem("nt_api_key"); }}
+                    style={{ color: "rgba(255,255,255,0.3)", cursor: "pointer", background: "none", border: "none", fontFamily: "'Space Mono', monospace", fontSize: "0.7rem" }}
+                  >
+                    [CERRAR SESIÓN]
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="h-px" style={{ background: "rgba(196,82,42,0.3)" }} />
+
+            {/* Guide */}
+            <div className="space-y-3">
+              <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ GUÍA DE OPERACIÓN:</div>
               <div className="space-y-2">
                 {[
                   "SELECCIONA el modelo: SIN o CON DÉFICIT",
                   "INGRESA los parámetros de tu producto/insumo",
                   'PRESIONA "EJECUTAR ANÁLISIS"',
                   "OBSERVA el cálculo EOQ paso a paso en la terminal",
-                  "RECIBE el análisis ejecutivo de NexTech AI (Claude)",
+                  "RECIBE el análisis ejecutivo de NexTech AI",
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-3 text-xs">
-                    <span
-                      className="flex-shrink-0 font-bold"
-                      style={{ color: "#C4522A", fontFamily: "'Space Mono', monospace" }}
-                    >
+                    <span className="flex-shrink-0 font-bold" style={{ color: "#C4522A" }}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span style={{ color: "rgba(255,255,255,0.8)" }}>{step}</span>
                   </div>
                 ))}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <button
+                onClick={loadExample}
+                className="w-full text-[10px] tracking-[0.18em] uppercase py-2.5 transition-all"
+                style={{
+                  border: "1px solid rgba(196,82,42,0.6)",
+                  color: "#FFD4A8",
+                  background: "rgba(196,82,42,0.12)",
+                  cursor: "pointer",
+                  fontFamily: "'Space Mono', monospace",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.3)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.12)"; }}
+              >
+                [ CARGAR EJEMPLO — TITANIO P1 ]
+              </button>
+            </div>
+          </div>
+
+          {/* Status bar */}
+          <div
+            className="relative z-10 flex items-center justify-between px-4 py-2"
+            style={{ borderTop: "1px solid rgba(196,82,42,0.3)", background: "rgba(0,0,0,0.4)" }}
+          >
+            <span
+              className="text-[9px] tracking-[0.12em] uppercase hidden md:block"
+              style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono', monospace" }}
+            >
+              NEXTECH INDUSTRIES — AUTH SYSTEM // ULASB 2026
+            </span>
+            <span
+              className="text-[9px] tracking-[0.1em]"
+              style={{
+                color: keyConnected ? "rgba(74,222,128,0.7)" : "rgba(196,82,42,0.6)",
+                fontFamily: "'Space Mono', monospace",
+              }}
+            >
+              [{keyConnected ? "SESIÓN ACTIVA" : "SIN AUTENTICAR"}]
+            </span>
+          </div>
+        </motion.div>
 
         {/* Input Form */}
         <AnimatePresence>
@@ -956,7 +1063,7 @@ export function AIAdvisor() {
                     className="text-[9px] tracking-[0.1em]"
                     style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono', monospace" }}
                   >
-                    [MODELO: gemini-2.0-flash]
+                    [MODELO: gemini-2.5-flash]
                   </span>
                   <span
                     className="text-[9px] tracking-[0.1em]"
