@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { TerminalText } from "./TerminalReveal";
 
 const rows = [
   { label: "Demanda Anual",        p1: "2,400 ton",    p2: "156,000 pzs",   p3: "18,000 tanq",  p4: "36,000 pan"  },
@@ -23,7 +24,7 @@ export function TablaComparativa() {
   return (
     <section
       id="comparativo"
-      className="py-24 px-6 md:px-16 grid-bg"
+      className="py-16 md:py-24 px-4 md:px-16 grid-bg"
       style={{ background: "rgba(0,0,0,0.12)" }}
     >
       <div className="max-w-5xl mx-auto">
@@ -33,19 +34,16 @@ export function TablaComparativa() {
           viewport={{ once: true }}
           className="tva-label mb-3"
         >
-          — Resumen
+          &gt;_ RESUMEN
         </motion.div>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
+        <TerminalText
+          tag="h2"
           className="text-3xl md:text-5xl font-bold uppercase tracking-[0.08em] mb-2"
           style={{ color: "#FFF0DC" }}
         >
           Tabla Comparativa
-        </motion.h2>
+        </TerminalText>
 
         <motion.div
           initial={{ scaleX: 0 }}
@@ -56,12 +54,17 @@ export function TablaComparativa() {
           style={{ background: "rgba(255,240,220,0.4)" }}
         />
 
+        {/* Mobile scroll hint */}
+        <p className="md:hidden tva-label mb-2 text-right" style={{ color: "rgba(255,200,120,0.5)" }}>
+          ← desliza →
+        </p>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="overflow-x-auto rounded-sm"
+          className="overflow-x-auto rounded-sm -mx-1"
           style={{ border: "1px solid rgba(255,240,220,0.15)" }}
         >
           <table className="w-full min-w-[640px] text-xs">

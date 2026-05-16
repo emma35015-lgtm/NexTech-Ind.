@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Rocket } from "lucide-react";
+import { TerminalText } from "./TerminalReveal";
 
 const members = [
   { num: "01", name: "Emmanuel",         role: "Líder de Proyecto" },
@@ -15,7 +16,7 @@ export function TeamSection() {
   return (
     <section
       id="equipo"
-      className="py-24 px-6 md:px-16 grid-bg"
+      className="py-16 md:py-24 px-4 md:px-16 grid-bg"
       style={{ background: "rgba(0,0,0,0.15)" }}
     >
       <div className="max-w-5xl mx-auto">
@@ -25,30 +26,27 @@ export function TeamSection() {
           viewport={{ once: true }}
           className="tva-label mb-3"
         >
-          — Equipo
+          &gt;_ EQUIPO
         </motion.div>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
+        <TerminalText
+          tag="h2"
           className="text-3xl md:text-5xl font-bold uppercase tracking-[0.08em] mb-2"
           style={{ color: "#FFF0DC" }}
         >
           NexTech Team
-        </motion.h2>
+        </TerminalText>
 
         <motion.div
           initial={{ scaleX: 0 }}
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="h-px w-16 mb-12 origin-left"
+          className="h-px w-16 mb-10 md:mb-12 origin-left"
           style={{ background: "rgba(255,240,220,0.4)" }}
         />
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
           {members.map((m, i) => (
             <motion.div
               key={m.num}
@@ -57,11 +55,7 @@ export function TeamSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 + i * 0.1, type: "spring", damping: 18 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="p-5 rounded-sm text-center relative overflow-hidden"
-              style={{
-                background: "rgba(0,0,0,0.22)",
-                border: "1px solid rgba(255,240,220,0.15)",
-              }}
+              className="p-4 md:p-5 rounded-sm text-center relative overflow-hidden terminal-panel"
             >
               {/* Number watermark */}
               <div
@@ -71,31 +65,33 @@ export function TeamSection() {
                 {m.num}
               </div>
 
-              <div className="relative z-10 flex flex-col items-center gap-3">
-                {/* Avatar placeholder */}
+              <div className="relative z-10 flex flex-col items-center gap-2 md:gap-3">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center"
                   style={{
                     background: "rgba(196,82,42,0.35)",
                     border: "1px solid rgba(255,240,220,0.2)",
                   }}
                 >
-                  <Rocket size={16} style={{ color: "#FFD4A8" }} />
+                  <Rocket size={14} style={{ color: "#FFD4A8" }} />
                 </div>
 
                 <div>
-                  <div className="text-sm font-bold mb-1" style={{ color: "#FFF0DC" }}>
+                  <TerminalText
+                    tag="div"
+                    speed={20}
+                    delay={400 + i * 100}
+                    className="text-xs md:text-sm font-bold mb-1"
+                    style={{ color: "#FFF0DC" }}
+                  >
                     {m.name}
-                  </div>
-                  <div className="text-[10px] tracking-[0.1em] uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  </TerminalText>
+                  <div className="text-[9px] md:text-[10px] tracking-[0.1em] uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
                     {m.role}
                   </div>
                 </div>
 
-                <div
-                  className="text-[10px] tracking-[0.2em]"
-                  style={{ color: "rgba(255,212,168,0.4)" }}
-                >
+                <div className="text-[9px] tracking-[0.2em]" style={{ color: "rgba(255,212,168,0.4)" }}>
                   {m.num}
                 </div>
               </div>
@@ -109,23 +105,19 @@ export function TeamSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.7 }}
-          className="mt-12 p-6 rounded-sm text-center"
-          style={{
-            background: "rgba(0,0,0,0.2)",
-            border: "1px solid rgba(255,240,220,0.1)",
-          }}
+          className="mt-10 md:mt-12 p-5 md:p-6 rounded-sm text-center terminal-panel"
         >
           <div className="space-y-2">
             {[
-              ["Materia", "Métodos Cuantitativos"],
-              ["Docente", "Dra. Elsa Villagran Escamilla"],
-              ["Universidad", "Universidad La Salle Bajío"],
-              ["Carrera", "Ingeniería Industrial"],
-              ["Fecha", "Mayo 2026"],
+              ["Materia",      "Métodos Cuantitativos"],
+              ["Docente",      "Dra. Elsa Villagran Escamilla"],
+              ["Universidad",  "Universidad La Salle Bajío"],
+              ["Carrera",      "Ingeniería Industrial"],
+              ["Fecha",        "Mayo 2026"],
             ].map(([k, v]) => (
-              <div key={k} className="flex justify-center items-center gap-4 text-xs">
+              <div key={k} className="flex justify-center items-center gap-3 md:gap-4 text-xs md:text-sm">
                 <span className="tva-label">{k}</span>
-                <span className="text-[11px]" style={{ color: "rgba(255,240,220,0.7)" }}>{v}</span>
+                <span style={{ color: "rgba(255,240,220,0.7)" }}>{v}</span>
               </div>
             ))}
           </div>

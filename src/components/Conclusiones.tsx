@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { TerminalText, TerminalParagraph } from "./TerminalReveal";
 
 const conclusiones = [
   {
@@ -29,7 +30,7 @@ export function Conclusiones() {
   return (
     <section
       id="conclusiones"
-      className="py-24 px-6 md:px-16"
+      className="py-16 md:py-24 px-4 md:px-16"
       style={{ background: "rgba(0,0,0,0.08)" }}
     >
       <div className="max-w-5xl mx-auto">
@@ -39,26 +40,23 @@ export function Conclusiones() {
           viewport={{ once: true }}
           className="tva-label mb-3"
         >
-          — Cierre
+          &gt;_ CIERRE
         </motion.div>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
+        <TerminalText
+          tag="h2"
           className="text-3xl md:text-5xl font-bold uppercase tracking-[0.08em] mb-2"
           style={{ color: "#FFF0DC" }}
         >
           Conclusiones
-        </motion.h2>
+        </TerminalText>
 
         <motion.div
           initial={{ scaleX: 0 }}
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="h-px w-16 mb-12 origin-left"
+          className="h-px w-16 mb-10 md:mb-12 origin-left"
           style={{ background: "rgba(255,240,220,0.4)" }}
         />
 
@@ -69,12 +67,8 @@ export function Conclusiones() {
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.2 + i * 0.12 }}
-              className="p-5 rounded-sm relative overflow-hidden"
-              style={{
-                background: "rgba(0,0,0,0.2)",
-                border: "1px solid rgba(255,240,220,0.15)",
-              }}
+              transition={{ delay: 0.15 + i * 0.1 }}
+              className="p-4 md:p-5 rounded-sm relative overflow-hidden terminal-panel"
             >
               {/* Big number background */}
               <div
@@ -86,23 +80,29 @@ export function Conclusiones() {
 
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-3">
-                  <span
-                    className="text-sm font-bold"
-                    style={{ color: "#FFD4A8" }}
-                  >
+                  <span className="text-sm font-bold" style={{ color: "#FFD4A8" }}>
                     {c.num}
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "#FFF0DC" }}>
+                  <TerminalText
+                    tag="span"
+                    speed={25}
+                    delay={300 + i * 120}
+                    className="text-xs md:text-sm font-bold uppercase tracking-[0.12em]"
+                    style={{ color: "#FFF0DC" }}
+                  >
                     {c.title}
-                  </span>
+                  </TerminalText>
                 </div>
-                <div
-                  className="h-px mb-3"
-                  style={{ background: "rgba(255,240,220,0.12)" }}
-                />
-                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
+                <div className="h-px mb-3" style={{ background: "rgba(255,240,220,0.12)" }} />
+                <TerminalParagraph
+                  chunkSize={4}
+                  interval={42}
+                  delay={500 + i * 120}
+                  className="text-xs md:text-sm leading-relaxed"
+                  style={{ color: "rgba(255,255,255,0.9)" }}
+                >
                   {c.body}
-                </p>
+                </TerminalParagraph>
               </div>
             </motion.div>
           ))}

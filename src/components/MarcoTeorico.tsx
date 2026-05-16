@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { TerminalText, TerminalParagraph } from "./TerminalReveal";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -11,7 +12,7 @@ export function MarcoTeorico() {
   return (
     <section
       id="teoria"
-      className="relative py-24 px-6 md:px-16 grid-bg"
+      className="relative py-16 md:py-24 px-4 md:px-16 grid-bg"
       style={{ background: "rgba(0,0,0,0.12)" }}
     >
       <div className="max-w-5xl mx-auto">
@@ -21,17 +22,16 @@ export function MarcoTeorico() {
           variants={fadeUp}
           className="tva-label mb-3"
         >
-          — Marco Teórico
+          &gt;_ MARCO TEÓRICO
         </motion.div>
 
-        <motion.h2
-          initial="hidden" whileInView="visible" viewport={{ once: true }}
-          variants={fadeUp}
+        <TerminalText
+          tag="h2"
           className="text-3xl md:text-5xl font-bold uppercase tracking-[0.08em] mb-3"
           style={{ color: "#FFF0DC" }}
         >
           Modelos de Inventario
-        </motion.h2>
+        </TerminalText>
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true }}
@@ -40,29 +40,25 @@ export function MarcoTeorico() {
           style={{ background: "rgba(255,240,220,0.4)" }}
         />
 
-        <motion.p
-          initial="hidden" whileInView="visible" viewport={{ once: true }}
-          variants={fadeUp}
-          className="text-sm leading-relaxed max-w-3xl mb-12"
+        <TerminalParagraph
+          chunkSize={5}
+          interval={38}
+          delay={400}
+          className="text-sm md:text-base leading-relaxed max-w-3xl mb-12"
           style={{ color: "rgba(255,255,255,0.9)" }}
         >
-          El inventario representa el mayor de los activos circulantes en NexTech Industries y
-          comprende todos los insumos críticos para la fabricación de cohetes y la ejecución de
-          misiones espaciales. Un modelo determinístico es una representación matemática donde
-          todas las variables de entrada son conocidas con certeza, lo cual permite calcular la
-          política óptima de pedidos y almacenamiento.
-        </motion.p>
+          El inventario representa el mayor de los activos circulantes en NexTech Industries y comprende todos los insumos críticos para la fabricación de cohetes y la ejecución de misiones espaciales. Un modelo determinístico es una representación matemática donde todas las variables de entrada son conocidas con certeza, lo cual permite calcular la política óptima de pedidos y almacenamiento.
+        </TerminalParagraph>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Model 1: Sin Déficit */}
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
             variants={fadeUp}
-            className="rounded-sm overflow-hidden"
-            style={{ border: "1px solid rgba(255,240,220,0.2)" }}
+            className="terminal-panel rounded-sm overflow-hidden"
           >
             <div
-              className="px-5 py-3 flex items-center justify-between"
+              className="px-4 md:px-5 py-3 flex items-center justify-between"
               style={{ background: "rgba(0,0,0,0.25)", borderBottom: "1px solid rgba(255,240,220,0.15)" }}
             >
               <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
@@ -73,16 +69,16 @@ export function MarcoTeorico() {
               </span>
             </div>
 
-            <div className="px-5 py-5 space-y-4">
+            <div className="px-4 md:px-5 py-5 space-y-4">
               <div>
-                <div className="tva-label mb-2">Supuestos</div>
+                <div className="tva-label mb-2">&gt; Supuestos</div>
                 <div className="space-y-1.5">
                   {[
                     "La demanda se efectúa a tasa constante",
                     "El reemplazo es instantáneo",
                     "Todos los coeficientes de costo son constantes",
                   ].map((s, i) => (
-                    <div key={i} className="flex items-start gap-3 text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
+                    <div key={i} className="flex items-start gap-3 text-xs md:text-sm" style={{ color: "rgba(255,255,255,0.9)" }}>
                       <span style={{ color: "#C4A07A", flexShrink: 0 }}>0{i + 1}</span>
                       <span>{s}</span>
                     </div>
@@ -91,7 +87,7 @@ export function MarcoTeorico() {
               </div>
 
               <div>
-                <div className="tva-label mb-2">Fórmulas</div>
+                <div className="tva-label mb-2">&gt; Fórmulas</div>
                 <div className="formula-block text-[0.72rem] space-y-1">
                   <div>Q  = √( 2·C₂·D / C₃ )</div>
                   <div>CT = C₁·D + (C₂·D/Q) + (C₃·Q/2)</div>
@@ -106,11 +102,10 @@ export function MarcoTeorico() {
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
             variants={{ ...fadeUp, visible: { ...fadeUp.visible, transition: { duration: 0.6, delay: 0.15 } } }}
-            className="rounded-sm overflow-hidden"
-            style={{ border: "1px solid rgba(255,240,220,0.2)" }}
+            className="terminal-panel rounded-sm overflow-hidden"
           >
             <div
-              className="px-5 py-3 flex items-center justify-between"
+              className="px-4 md:px-5 py-3 flex items-center justify-between"
               style={{ background: "rgba(0,0,0,0.25)", borderBottom: "1px solid rgba(255,240,220,0.15)" }}
             >
               <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
@@ -121,16 +116,16 @@ export function MarcoTeorico() {
               </span>
             </div>
 
-            <div className="px-5 py-5 space-y-4">
+            <div className="px-4 md:px-5 py-5 space-y-4">
               <div>
-                <div className="tva-label mb-2">Variable adicional</div>
+                <div className="tva-label mb-2">&gt; Variable adicional</div>
                 <div className="space-y-1.5">
                   {[
                     "C₄ = Costo por déficit (faltante/año)",
                     "S = Número de unidades agotadas",
                     "IM = Inventario Máximo = Q − S",
                   ].map((s, i) => (
-                    <div key={i} className="flex items-start gap-3 text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
+                    <div key={i} className="flex items-start gap-3 text-xs md:text-sm" style={{ color: "rgba(255,255,255,0.9)" }}>
                       <span style={{ color: "#C4A07A", flexShrink: 0 }}>0{i + 1}</span>
                       <span>{s}</span>
                     </div>
@@ -139,7 +134,7 @@ export function MarcoTeorico() {
               </div>
 
               <div>
-                <div className="tva-label mb-2">Fórmulas</div>
+                <div className="tva-label mb-2">&gt; Fórmulas</div>
                 <div className="formula-block text-[0.72rem] space-y-1">
                   <div>Q  = √(2·C₂·D/C₃) × √((C₃+C₄)/C₄)</div>
                   <div>S  = (C₃/(C₃+C₄)) × Q</div>
@@ -157,11 +152,11 @@ export function MarcoTeorico() {
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true }}
           variants={fadeUp}
-          className="mt-6 p-5 rounded-sm"
+          className="mt-6 p-4 md:p-5 rounded-sm"
           style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,240,220,0.1)" }}
         >
-          <div className="tva-label mb-3">Variables</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 text-[11px]" style={{ color: "rgba(255,255,255,0.88)" }}>
+          <div className="tva-label mb-3">&gt; Variables</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-xs md:text-sm" style={{ color: "rgba(255,255,255,0.88)" }}>
             {[
               ["Q", "Cantidad Óptima"],
               ["C₁", "Costo Unitario"],

@@ -33,8 +33,8 @@ export default function Home() {
             {/* Sin Déficit */}
             <RocketSeparator label="Compras Sin Déficit" />
             <section id="sin-deficit">
-              <div className="px-6 md:px-16 pt-12 pb-4 max-w-5xl mx-auto">
-                <div className="tva-label mb-2">Sección 01</div>
+              <div className="px-4 md:px-16 pt-10 md:pt-12 pb-4 max-w-5xl mx-auto">
+                <div className="tva-label mb-2">&gt;_ SECCIÓN 01</div>
                 <h2 className="text-3xl md:text-4xl font-bold uppercase tracking-[0.08em]" style={{ color: "#FFFFFF" }}>
                   Compras Sin Déficit
                 </h2>
@@ -111,8 +111,8 @@ export default function Home() {
             {/* Con Déficit */}
             <RocketSeparator label="Compras Con Déficit" flip />
             <section id="con-deficit" style={{ background: "rgba(0,0,0,0.08)" }}>
-              <div className="px-6 md:px-16 pt-12 pb-4 max-w-5xl mx-auto">
-                <div className="tva-label mb-2">Sección 02</div>
+              <div className="px-4 md:px-16 pt-10 md:pt-12 pb-4 max-w-5xl mx-auto">
+                <div className="tva-label mb-2">&gt;_ SECCIÓN 02</div>
                 <h2 className="text-3xl md:text-4xl font-bold uppercase tracking-[0.08em]" style={{ color: "#FFFFFF" }}>
                   Compras Con Déficit
                 </h2>

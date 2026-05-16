@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { SinDeficitChart, ConDeficitChart } from "./InventoryChart";
 import { CountUp } from "./AnimatedCounter";
+import { TerminalText } from "./TerminalReveal";
 
 interface ResultRow {
   label: string;
@@ -58,7 +59,7 @@ export function ProblemaSection({
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-60px" }}
-      className="py-16 px-6 md:px-16"
+      className="py-12 md:py-16 px-4 md:px-16"
       style={{ borderBottom: "1px solid rgba(255,240,220,0.1)" }}
     >
       <div className="max-w-5xl mx-auto space-y-8">
@@ -75,17 +76,18 @@ export function ProblemaSection({
             >
               {isDeficit ? "Con Déficit" : "Sin Déficit"}
             </span>
-            <span className="tva-label">Problema {number}</span>
+            <span className="tva-label">&gt;_ Problema {number}</span>
           </motion.div>
 
-          <motion.h3
-            custom={1}
-            variants={fadeUp}
+          <TerminalText
+            tag="h3"
+            speed={22}
+            delay={200}
             className="text-2xl md:text-3xl font-bold uppercase tracking-[0.06em]"
             style={{ color: "#FFF0DC" }}
           >
             {title}
-          </motion.h3>
+          </TerminalText>
         </div>
 
         {/* Content grid */}
@@ -93,14 +95,14 @@ export function ProblemaSection({
           {/* Left: Planteamiento + Datos */}
           <motion.div custom={2} variants={fadeUp} className="md:col-span-2 space-y-5">
             <div>
-              <div className="tva-label mb-3">Planteamiento</div>
-              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
+              <div className="tva-label mb-3">&gt; Planteamiento</div>
+              <p className="text-xs md:text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
                 {planteamiento}
               </p>
             </div>
 
             <div>
-              <div className="tva-label mb-3">Datos</div>
+              <div className="tva-label mb-3">&gt; Datos</div>
               <div
                 className="rounded-sm overflow-hidden"
                 style={{ border: "1px solid rgba(255,240,220,0.12)" }}
@@ -108,7 +110,7 @@ export function ProblemaSection({
                 {datos.map((d, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between px-4 py-2 text-xs"
+                    className="flex items-center justify-between px-3 md:px-4 py-2 text-xs md:text-sm"
                     style={{
                       background: i % 2 === 0 ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.08)",
                       borderBottom: i < datos.length - 1 ? "1px solid rgba(255,240,220,0.07)" : "none",
@@ -125,7 +127,7 @@ export function ProblemaSection({
           {/* Right: Formulas */}
           <motion.div custom={3} variants={fadeUp} className="md:col-span-3 space-y-5">
             <div>
-              <div className="tva-label mb-3">Desarrollo</div>
+              <div className="tva-label mb-3">&gt; Desarrollo</div>
               <div className="formula-block">
                 {formulas.map((line, i) => (
                   <div key={i} className={line === "" ? "mt-2" : ""}>
