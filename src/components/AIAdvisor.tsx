@@ -193,65 +193,182 @@ async function* streamGemini(apiKey: string, prompt: string) {
 }
 
 function MissMinutes({ small = false }: { small?: boolean }) {
-  const w = small ? 64 : 88;
-  const h = small ? 82 : 112;
-  const s = small ? 64 / 88 : 1;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameRef = useRef(0);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.imageSmoothingEnabled = false;
+
+    const C = {
+      outline: "#3a1408",
+      orange:  "#C4522A",
+      lightO:  "#d4622a",
+      highlight: "#e88050",
+      marks:   "#3a1408",
+      white:   "#FFF0DC",
+      black:   "#0A0300",
+      pink:    "#e06040",
+      cheek:   "#d05028",
+    };
+
+    function fillCircle(cx: number, cy: number, r: number, color: string) {
+      ctx!.fillStyle = color;
+      const r2 = r * r, rc = Math.ceil(r);
+      for (let y = -rc; y <= rc; y++)
+        for (let x = -rc; x <= rc; x++)
+          if (x * x + y * y <= r2) ctx!.fillRect((cx + x) | 0, (cy + y) | 0, 1, 1);
+    }
+
+    function ringCircle(cx: number, cy: number, rOut: number, rIn: number, color: string) {
+      ctx!.fillStyle = color;
+      const ro2 = rOut * rOut, ri2 = rIn * rIn, rc = Math.ceil(rOut);
+      for (let y = -rc; y <= rc; y++)
+        for (let x = -rc; x <= rc; x++) {
+          const d2 = x * x + y * y;
+          if (d2 <= ro2 && d2 > ri2) ctx!.fillRect((cx + x) | 0, (cy + y) | 0, 1, 1);
+        }
+    }
+
+    function drawLine(x0: number, y0: number, x1: number, y1: number, color: string) {
+      ctx!.fillStyle = color;
+      x0 = x0 | 0; y0 = y0 | 0; x1 = x1 | 0; y1 = y1 | 0;
+      const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+      const dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+      let err = dx + dy;
+      for (;;) {
+        ctx!.fillRect(x0, y0, 1, 1);
+        if (x0 === x1 && y0 === y1) break;
+        const e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+      }
+    }
+
+    const c = canvas;
+    function draw() {
+      ctx!.clearRect(0, 0, c.width, c.height);
+      const frame = frameRef.current;
+
+      const bounce    = Math.round(Math.sin(frame * 0.08) * 1.2);
+      const handAngle = (frame * 0.045) % (Math.PI * 2);
+      const hourAngle = (frame * 0.006) % (Math.PI * 2);
+      const isBlinking = (frame % 140) < 5;
+      const armWaveY  = Math.round(Math.sin(frame * 0.13) * 3);
+
+      const cx = 32, cy = 26 + bounce, r = 18;
+
+      // Shadow
+      ctx!.fillStyle = "rgba(50,20,5,0.18)";
+      for (let dx = -12; dx <= 12; dx++)
+        for (let dy = -2; dy <= 2; dy++)
+          if ((dx * dx) / 144 + (dy * dy) / 4 <= 1) ctx!.fillRect(cx + dx, 54 + dy, 1, 1);
+
+      // Right arm
+      drawLine(cx + r - 1, cy + 2, cx + r + 4, cy + 6, C.outline);
+      fillCircle(cx + r + 4, cy + 6, 2, C.lightO);
+      ringCircle(cx + r + 4, cy + 6, 2.5, 1.5, C.outline);
+
+      // Left arm (waving)
+      const lax = cx - r + 1, lay = cy + armWaveY;
+      drawLine(lax, lay, lax - 5, lay - 7, C.outline);
+      fillCircle(lax - 5, lay - 7, 2, C.lightO);
+      ringCircle(lax - 5, lay - 7, 2.5, 1.5, C.outline);
+
+      // Body
+      fillCircle(cx, cy, r + 1, C.outline);
+      fillCircle(cx, cy, r, C.orange);
+
+      // Highlight rim
+      for (let y = -r + 1; y < 2; y++)
+        for (let x = -r + 1; x < 2; x++) {
+          const d2 = x * x + y * y;
+          if (d2 <= (r - 1) * (r - 1) && d2 > (r - 4) * (r - 4) && x < y + 2) {
+            ctx!.fillStyle = C.lightO;
+            ctx!.fillRect(cx + x, cy + y, 1, 1);
+          }
+        }
+      for (let a = Math.PI * 1.15; a < Math.PI * 1.55; a += 0.08) {
+        ctx!.fillStyle = C.highlight;
+        ctx!.fillRect(cx + Math.round(Math.cos(a) * (r - 2)), cy + Math.round(Math.sin(a) * (r - 2)), 1, 1);
+      }
+
+      // Clock marks
+      ctx!.fillStyle = C.marks;
+      ctx!.fillRect(cx - 1, cy - r + 2, 2, 3);
+      ctx!.fillRect(cx - 1, cy + r - 4, 2, 3);
+      ctx!.fillRect(cx + r - 4, cy - 1, 3, 2);
+      ctx!.fillRect(cx - r + 2, cy - 1, 3, 2);
+      for (let i = 0; i < 12; i++) {
+        if (i % 3 === 0) continue;
+        const a = (i * Math.PI * 2) / 12 - Math.PI / 2;
+        ctx!.fillRect(Math.round(cx + Math.cos(a) * (r - 3)), Math.round(cy + Math.sin(a) * (r - 3)), 1, 1);
+      }
+
+      // Hands
+      drawLine(cx, cy, cx + Math.round(Math.cos(handAngle - Math.PI / 2) * 7), cy + Math.round(Math.sin(handAngle - Math.PI / 2) * 7), C.marks);
+      drawLine(cx, cy, cx + Math.round(Math.cos(hourAngle - Math.PI / 2) * 4), cy + Math.round(Math.sin(hourAngle - Math.PI / 2) * 4), C.marks);
+
+      // Eyes
+      const eyeY = cy - 3, eyeXL = cx - 6, eyeXR = cx + 6;
+      fillCircle(eyeXL, eyeY, 3, C.white);
+      fillCircle(eyeXR, eyeY, 3, C.white);
+      ringCircle(eyeXL, eyeY, 3.5, 2.5, C.outline);
+      ringCircle(eyeXR, eyeY, 3.5, 2.5, C.outline);
+      if (isBlinking) {
+        ctx!.fillStyle = C.outline;
+        ctx!.fillRect(eyeXL - 3, eyeY, 6, 1);
+        ctx!.fillRect(eyeXR - 3, eyeY, 6, 1);
+      } else {
+        fillCircle(eyeXL, eyeY + 1, 1.4, C.black);
+        fillCircle(eyeXR, eyeY + 1, 1.4, C.black);
+        ctx!.fillStyle = C.white;
+        ctx!.fillRect(eyeXL - 1, eyeY, 1, 1);
+        ctx!.fillRect(eyeXR - 1, eyeY, 1, 1);
+      }
+
+      // Eyelashes
+      ctx!.fillStyle = C.outline;
+      ctx!.fillRect(eyeXL - 4, eyeY - 3, 1, 1);
+      ctx!.fillRect(eyeXL - 3, eyeY - 4, 1, 1);
+      ctx!.fillRect(eyeXR + 3, eyeY - 3, 1, 1);
+      ctx!.fillRect(eyeXR + 2, eyeY - 4, 1, 1);
+
+      // Cheeks
+      ctx!.fillStyle = C.cheek;
+      ctx!.fillRect(cx - 10, cy + 2, 2, 2);
+      ctx!.fillRect(cx + 9,  cy + 2, 2, 2);
+
+      // Mouth
+      ctx!.fillStyle = C.outline;
+      ctx!.fillRect(cx - 3, cy + 4, 1, 1);
+      ctx!.fillRect(cx + 2, cy + 4, 1, 1);
+      ctx!.fillRect(cx - 2, cy + 5, 5, 1);
+      ctx!.fillStyle = C.pink;
+      ctx!.fillRect(cx - 1, cy + 6, 3, 1);
+
+      frameRef.current++;
+      rafRef.current = requestAnimationFrame(draw);
+    }
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  const cssW = small ? 64 : 128;
+  const cssH = small ? 80 : 160;
+
   return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 88 112"
-      className="miss-minutes"
-      style={{ imageRendering: "pixelated" }}
-    >
-      {/* Antenna */}
-      <rect x="36" y="0"  width="16" height="8"  fill="#C4522A" />
-
-      {/* Clock body */}
-      <rect x="24" y="8"  width="40" height="8"  fill="#C4522A" />
-      <rect x="16" y="16" width="56" height="8"  fill="#C4522A" />
-      <rect x="8"  y="24" width="72" height="52" fill="#C4522A" />
-      <rect x="16" y="76" width="56" height="8"  fill="#C4522A" />
-      <rect x="24" y="84" width="40" height="8"  fill="#C4522A" />
-
-      {/* Tick marks — 12, 9, 3, 6 */}
-      <rect x="36" y="8"  width="16" height="6"  fill="#7A2D10" />
-      <rect x="8"  y="44" width="6"  height="14" fill="#7A2D10" />
-      <rect x="74" y="44" width="6"  height="14" fill="#7A2D10" />
-      <rect x="36" y="80" width="16" height="6"  fill="#7A2D10" />
-
-      {/* Eyebrows (arched) */}
-      <rect x="12" y="29" width="8"  height="4"  fill="#7A2D10" />
-      <rect x="20" y="26" width="14" height="4"  fill="#7A2D10" />
-      <rect x="54" y="26" width="14" height="4"  fill="#7A2D10" />
-      <rect x="68" y="29" width="8"  height="4"  fill="#7A2D10" />
-
-      {/* Eyes */}
-      <rect x="12" y="34" width="24" height="18" fill="#0A0300" />
-      <rect x="52" y="34" width="24" height="18" fill="#0A0300" />
-      {/* Highlights */}
-      <rect x="15" y="37" width="8"  height="8"  fill="#FFF0DC" />
-      <rect x="55" y="37" width="8"  height="8"  fill="#FFF0DC" />
-
-      {/* Smile */}
-      <rect x="14" y="60" width="8"  height="12" fill="#0A0300" />
-      <rect x="22" y="56" width="44" height="8"  fill="#0A0300" />
-      <rect x="66" y="60" width="8"  height="12" fill="#0A0300" />
-      {/* Teeth */}
-      <rect x="22" y="60" width="44" height="6"  fill="#FFF0DC" />
-
-      {/* Arms */}
-      <rect x="0"  y="28" width="8"  height="20" fill="#C4522A" />
-      <rect x="80" y="28" width="8"  height="20" fill="#C4522A" />
-
-      {/* Legs */}
-      <rect x="24" y="92" width="14" height="14" fill="#A03D1A" />
-      <rect x="50" y="92" width="14" height="14" fill="#A03D1A" />
-
-      {/* Feet */}
-      <rect x="16" y="106" width="20" height="8" fill="#C4522A" />
-      <rect x="52" y="106" width="20" height="8" fill="#C4522A" />
-    </svg>
+    <canvas
+      ref={canvasRef}
+      width={64}
+      height={80}
+      style={{ imageRendering: "pixelated", width: cssW, height: cssH, display: "block" }}
+    />
   );
 }
 
