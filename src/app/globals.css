@@ -143,3 +143,29 @@ body {
   );
   pointer-events: none;
 }
+
+/* AI Advisor terminal inputs */
+.terminal-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(196,82,42,0.5);
+  color: #FFD4A8;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  padding: 4px 0;
+  outline: none;
+  width: 100%;
+}
+.terminal-input:focus { border-bottom-color: #C4522A; }
+.terminal-input::placeholder { color: rgba(255,212,168,0.3); }
+.terminal-input[type="number"]::-webkit-inner-spin-button,
+.terminal-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.terminal-input[type="number"] { -moz-appearance: textfield; }
+
+/* Pixel robot animation */
+@keyframes pixelWalk {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+.pixel-robot { animation: pixelWalk 0.6s ease-in-out infinite; }

@@ -9,6 +9,7 @@ const navItems = [
   { name: "Teoría", href: "#teoria" },
   { name: "Sin Déficit", href: "#sin-deficit" },
   { name: "Con Déficit", href: "#con-deficit" },
+  { name: "IA Demo",     href: "#ai-demo" },
   { name: "Comparativo", href: "#comparativo" },
   { name: "Equipo", href: "#equipo" },
 ];

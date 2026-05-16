@@ -8,6 +8,7 @@ import { RocketSeparator } from "@/components/RocketSeparator";
 import { HeroSection } from "@/components/HeroSection";
 import { MarcoTeorico } from "@/components/MarcoTeorico";
 import { ProblemaSection } from "@/components/ProblemaSection";
+import { AIAdvisor } from "@/components/AIAdvisor";
 import { TablaComparativa } from "@/components/TablaComparativa";
 import { Conclusiones } from "@/components/Conclusiones";
 import { TeamSection } from "@/components/TeamSection";
@@ -195,6 +196,9 @@ export default function Home() {
                 chartProps={{ Q: 3369, S: 506, t: 34, N: 11, unit: "pan" }}
               />
             </section>
+
+            <RocketSeparator label="IA Demo" />
+            <AIAdvisor />
 
             <RocketSeparator label="Comparativo" />
             <TablaComparativa />
