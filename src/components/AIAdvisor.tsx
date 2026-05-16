@@ -268,6 +268,94 @@ function WireframeCube() {
   );
 }
 
+function generateReport(form: FormValues, model: ModelType, result: EOQResult, aiText: string) {
+  const date = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+  const modelName = model === "sin-deficit" ? "Sin Déficit (EOQ Clásico)" : "Con Déficit (EOQ con Faltantes)";
+  const div = "=".repeat(50);
+
+  const params = model === "sin-deficit"
+    ? [
+        `D  — Demanda anual:     ${parseFloat(form.D).toLocaleString()} uds/año`,
+        `C1 — Costo unitario:   $${form.C1} / ud`,
+        `C2 — Costo de ordenar: $${form.C2} / pedido`,
+        `C3 — Costo almacenar:  $${form.C3} / ud·año`,
+      ].join("\n")
+    : [
+        `D  — Demanda anual:     ${parseFloat(form.D).toLocaleString()} uds/año`,
+        `C1 — Costo unitario:   $${form.C1} / ud`,
+        `C2 — Costo de ordenar: $${form.C2} / pedido`,
+        `C3 — Costo almacenar:  $${form.C3} / ud·año`,
+        `C4 — Costo déficit:    $${form.C4} / ud·año`,
+      ].join("\n");
+
+  const results = result.type === "sin-deficit"
+    ? [
+        `Cantidad optima Q:      ${Math.round(result.Q).toLocaleString()} uds/pedido`,
+        `Pedidos por año N:      ${Math.round(result.N)} pedidos`,
+        `Tiempo entre pedidos:   ${Math.round(result.t)} días`,
+        `Costo Total Anual CT:   $${result.CT.toLocaleString()}`,
+      ].join("\n")
+    : [
+        `Cantidad optima Q:      ${Math.round(result.Q).toLocaleString()} uds/pedido`,
+        `Unidades agotadas S:    ${Math.round((result as EOQResultCon).S).toLocaleString()} uds/ciclo`,
+        `Inventario maximo IM:   ${Math.round((result as EOQResultCon).IM).toLocaleString()} uds`,
+        `Pedidos por año N:      ${Math.round(result.N)} pedidos`,
+        `Tiempo entre pedidos:   ${Math.round(result.t)} días`,
+        `Costo Total Anual CT:   $${result.CT.toLocaleString()}`,
+      ].join("\n");
+
+  const body = [
+    div,
+    "NEXTECH INDUSTRIES",
+    "Sistema de Analisis de Inventario EOQ",
+    "Motor EOQ v2.1 + Gemini 2.5 Flash",
+    div,
+    "",
+    "Estimado/a,",
+    "",
+    "El equipo de NexTech Industries le hace llegar el reporte de",
+    "optimizacion de inventario generado por nuestro sistema de",
+    "analisis cuantitativo (Motor EOQ + Inteligencia Artificial).",
+    "",
+    div,
+    "DATOS DEL ANALISIS",
+    div,
+    "",
+    `Producto/Insumo:  ${form.nombre}`,
+    `Modelo aplicado:  ${modelName}`,
+    `Fecha:            ${date}`,
+    "",
+    "PARAMETROS DE ENTRADA:",
+    params,
+    "",
+    "RESULTADOS OPTIMOS:",
+    results,
+    "",
+    div,
+    "ANALISIS NEXTECH AI (Gemini 2.5 Flash)",
+    div,
+    "",
+    aiText,
+    "",
+    div,
+    "Atentamente,",
+    "Equipo NexTech Industries",
+    "Ingenieria Industrial — Metodos Cuantitativos",
+    "Universidad La Salle Bajio | 2026",
+    "",
+    "Este reporte fue generado automaticamente por NexTech AI Advisor.",
+    "Los resultados se basan en el Modelo EOQ aplicado a los",
+    "parametros ingresados. Verificar con el docente antes de tomar",
+    "decisiones operativas basadas en este reporte.",
+    div,
+  ].join("\n");
+
+  return {
+    subject: `NexTech Industries — Reporte EOQ: ${form.nombre}`,
+    body,
+  };
+}
+
 const EXAMPLE: FormValues = {
   nombre: "Aleaciones de Titanio",
   D: "2400",
@@ -300,6 +388,7 @@ export function AIAdvisor() {
   const [aiText, setAiText] = useState("");
   const [aiDone, setAiDone] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [emailRecipient, setEmailRecipient] = useState("");
   const outputRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -1090,6 +1179,67 @@ export function AIAdvisor() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Email report */}
+              <AnimatePresence>
+                {phase === "done" && aiDone && result && (
+                  <motion.div
+                    key="email"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="px-4 md:px-6 pb-5 space-y-3"
+                  >
+                    <div className="h-px" style={{ background: "rgba(196,82,42,0.35)" }} />
+                    <div className="tva-label" style={{ color: "#C4522A" }}>
+                      &gt;_ EXPORTAR REPORTE:
+                    </div>
+                    <p
+                      className="text-xs leading-relaxed"
+                      style={{ color: "rgba(255,212,168,0.55)", fontFamily: "'Space Mono', monospace", fontSize: "0.7rem" }}
+                    >
+                      Se generará un reporte completo con parámetros, resultados y análisis AI,
+                      con un mensaje del equipo NexTech Industries.
+                    </p>
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm flex-shrink-0" style={{ color: "#C4522A" }}>&gt;&gt;</span>
+                        <input
+                          type="email"
+                          className="terminal-input flex-1"
+                          placeholder="destinatario@correo.com"
+                          value={emailRecipient}
+                          onChange={(e) => setEmailRecipient(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const { subject, body } = generateReport(form, model, result, aiText);
+                          const mailto = `mailto:${emailRecipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                          window.open(mailto, "_self");
+                        }}
+                        className="text-[10px] tracking-[0.18em] uppercase px-5 py-2.5 font-bold transition-all whitespace-nowrap"
+                        style={{
+                          background: "#C4522A",
+                          color: "#0A0300",
+                          border: "1px solid #C4522A",
+                          cursor: "pointer",
+                          fontFamily: "'Space Mono', monospace",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#FFD4A8"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#C4522A"; }}
+                      >
+                        [ ENVIAR REPORTE ]
+                      </button>
+                    </div>
+                    <div
+                      style={{ color: "rgba(255,212,168,0.35)", fontSize: "0.65rem", fontFamily: "'Space Mono', monospace" }}
+                    >
+                      Abre tu cliente de correo (Mail, Outlook, Gmail) con el reporte pre-llenado.
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Status bar */}
               <div
