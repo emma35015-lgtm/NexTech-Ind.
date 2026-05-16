@@ -783,7 +783,7 @@ export function AIAdvisor() {
           </div>
         </motion.div>
 
-        {/* Input Form */}
+        {/* Input Form — TVA Terminal */}
         <AnimatePresence>
           {keyConnected && (
             <motion.div
@@ -791,122 +791,210 @@ export function AIAdvisor() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="terminal-panel p-5 md:p-6 rounded-sm space-y-5"
+              className="relative rounded-sm overflow-hidden scanlines"
+              style={{
+                background: "#0A0300",
+                border: "2px solid #C4522A",
+                boxShadow: "0 0 18px rgba(196,82,42,0.4), inset 0 0 30px rgba(196,82,42,0.05)",
+              }}
             >
-              <div className="tva-label">&gt;_ PARÁMETROS DE ENTRADA</div>
-
-              {/* Model toggle */}
-              <div className="flex gap-2 flex-wrap">
-                {(["sin-deficit", "con-deficit"] as ModelType[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setModel(m)}
-                    className="text-[11px] tracking-[0.12em] uppercase px-4 py-2 rounded-sm transition-all font-bold"
-                    style={{
-                      background: model === m ? "#C4522A" : "rgba(0,0,0,0.3)",
-                      color: model === m ? "#0A0300" : "rgba(255,255,255,0.5)",
-                      border: `1px solid ${model === m ? "#C4522A" : "rgba(255,255,255,0.12)"}`,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {m === "sin-deficit" ? "Sin Déficit" : "Con Déficit"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                <div>
-                  <label className="tva-label block mb-1.5">Nombre del Producto / Insumo</label>
-                  <input
-                    className="terminal-input"
-                    placeholder="ej. Aleaciones de Titanio"
-                    value={form.nombre}
-                    onChange={(e) => setField("nombre", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="tva-label block mb-1.5">D — Demanda Anual (uds/año)</label>
-                  <input
-                    type="number"
-                    className="terminal-input"
-                    placeholder="ej. 2400"
-                    value={form.D}
-                    onChange={(e) => setField("D", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="tva-label block mb-1.5">C₁ — Costo Unitario ($/ud)</label>
-                  <input
-                    type="number"
-                    className="terminal-input"
-                    placeholder="ej. 850"
-                    value={form.C1}
-                    onChange={(e) => setField("C1", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="tva-label block mb-1.5">C₂ — Costo de Ordenar ($/pedido)</label>
-                  <input
-                    type="number"
-                    className="terminal-input"
-                    placeholder="ej. 1500"
-                    value={form.C2}
-                    onChange={(e) => setField("C2", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="tva-label block mb-1.5">C₃ — Costo de Almacenar ($/ud·año)</label>
-                  <input
-                    type="number"
-                    className="terminal-input"
-                    placeholder="ej. 48"
-                    value={form.C3}
-                    onChange={(e) => setField("C3", e.target.value)}
-                  />
-                </div>
-                <AnimatePresence>
-                  {model === "con-deficit" && (
-                    <motion.div
-                      key="c4"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      style={{ overflow: "hidden" }}
-                    >
-                      <label className="tva-label block mb-1.5">C₄ — Costo de Déficit ($/ud·año)</label>
-                      <input
-                        type="number"
-                        className="terminal-input"
-                        placeholder="ej. 80"
-                        value={form.C4}
-                        onChange={(e) => setField("C4", e.target.value)}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {errorMsg && phase !== "streaming" && phase !== "calculating" && (
-                <div className="text-xs" style={{ color: "#FF7050", fontFamily: "'Space Mono', monospace" }}>
-                  {errorMsg}
-                </div>
-              )}
-
-              <button
-                onClick={handleExecute}
-                disabled={!canRun}
-                className="w-full py-3 text-sm tracking-[0.2em] uppercase font-bold rounded-sm transition-all"
+              {/* CRT inner grid */}
+              <div
+                className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: canRun ? "#C4522A" : "rgba(196,82,42,0.2)",
-                  color: canRun ? "#0A0300" : "rgba(255,255,255,0.3)",
-                  border: `1px solid ${canRun ? "#C4522A" : "rgba(196,82,42,0.2)"}`,
-                  fontFamily: "'Space Mono', monospace",
-                  cursor: canRun ? "pointer" : "not-allowed",
+                  backgroundImage: [
+                    "repeating-linear-gradient(rgba(196,82,42,0.06) 0px, rgba(196,82,42,0.06) 1px, transparent 1px, transparent 40px)",
+                    "repeating-linear-gradient(90deg, rgba(196,82,42,0.06) 0px, rgba(196,82,42,0.06) 1px, transparent 1px, transparent 40px)",
+                  ].join(", "),
                 }}
+              />
+
+              {/* Corner brackets */}
+              {(["┌", "┐", "└", "┘"] as const).map((ch, i) => (
+                <span
+                  key={i}
+                  className="absolute text-sm pointer-events-none select-none"
+                  style={{
+                    color: "rgba(196,82,42,0.5)",
+                    top: i < 2 ? 6 : undefined,
+                    bottom: i >= 2 ? 6 : undefined,
+                    left: i % 2 === 0 ? 8 : undefined,
+                    right: i % 2 === 1 ? 8 : undefined,
+                  }}
+                >
+                  {ch}
+                </span>
+              ))}
+
+              {/* Header stripe */}
+              <div
+                className="relative z-10 flex items-center justify-between px-4 h-9"
+                style={{ background: "#C4522A" }}
               >
-                {phase === "calculating" || phase === "streaming" ? "[ ANALIZANDO... ]" : ">> EJECUTAR ANÁLISIS"}
-              </button>
+                <span
+                  className="text-[10px] tracking-[0.18em] uppercase font-bold hidden md:block"
+                  style={{ color: "#0A0300", fontFamily: "'Space Mono', monospace" }}
+                >
+                  ████ NEXTECH — PARÁMETROS DE ENTRADA ████
+                </span>
+                <span
+                  className="text-[10px] tracking-[0.18em] uppercase font-bold md:hidden"
+                  style={{ color: "#0A0300", fontFamily: "'Space Mono', monospace" }}
+                >
+                  PARÁMETROS
+                </span>
+                <span
+                  className="text-[9px] tracking-[0.15em] uppercase"
+                  style={{ color: "#0A0300", fontFamily: "'Space Mono', monospace" }}
+                >
+                  [MOTOR EOQ v2.1]
+                </span>
+              </div>
+
+              {/* Body */}
+              <div
+                className="relative z-10 p-4 md:p-6 space-y-6"
+                style={{ fontFamily: "'Space Mono', monospace" }}
+              >
+                {/* Model selector */}
+                <div className="space-y-2">
+                  <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ MODELO DE INVENTARIO:</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {(["sin-deficit", "con-deficit"] as ModelType[]).map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => setModel(m)}
+                        className="text-[11px] tracking-[0.12em] uppercase px-4 py-2 font-bold transition-all"
+                        style={{
+                          background: model === m ? "#C4522A" : "rgba(196,82,42,0.1)",
+                          color: model === m ? "#0A0300" : "rgba(255,212,168,0.5)",
+                          border: `1px solid ${model === m ? "#C4522A" : "rgba(196,82,42,0.3)"}`,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {model === m ? "▶ " : "  "}{m === "sin-deficit" ? "Sin Déficit" : "Con Déficit"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="h-px" style={{ background: "rgba(196,82,42,0.25)" }} />
+
+                {/* Nombre field — full width */}
+                <div className="space-y-1">
+                  <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ INSUMO / PRODUCTO:</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm flex-shrink-0" style={{ color: "#C4522A" }}>&gt;&gt;</span>
+                    <input
+                      className="terminal-input flex-1"
+                      placeholder="ej. Aleaciones de Titanio"
+                      value={form.nombre}
+                      onChange={(e) => setField("nombre", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="h-px" style={{ background: "rgba(196,82,42,0.25)" }} />
+
+                {/* Numeric fields */}
+                <div className="space-y-2">
+                  <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ PARÁMETROS ECONÓMICOS:</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    {[
+                      { key: "D",  label: "D  — Demanda Anual",        unit: "uds/año",    placeholder: "2400",  type: "number" },
+                      { key: "C1", label: "C₁ — Costo Unitario",       unit: "$/ud",       placeholder: "850",   type: "number" },
+                      { key: "C2", label: "C₂ — Costo de Ordenar",     unit: "$/pedido",   placeholder: "1500",  type: "number" },
+                      { key: "C3", label: "C₃ — Costo de Almacenar",   unit: "$/ud·año",   placeholder: "48",    type: "number" },
+                    ].map(({ key, label, unit, placeholder, type }) => (
+                      <div key={key} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] tracking-[0.1em]" style={{ color: "rgba(255,212,168,0.5)" }}>{label}</span>
+                          <span className="text-[9px]" style={{ color: "rgba(196,82,42,0.6)" }}>{unit}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs flex-shrink-0" style={{ color: "#C4522A" }}>&gt;&gt;</span>
+                          <input
+                            type={type}
+                            className="terminal-input flex-1"
+                            placeholder={placeholder}
+                            value={form[key as keyof FormValues]}
+                            onChange={(e) => setField(key as keyof FormValues, e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    <AnimatePresence>
+                      {model === "con-deficit" && (
+                        <motion.div
+                          key="c4"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          style={{ overflow: "hidden" }}
+                          className="space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] tracking-[0.1em]" style={{ color: "rgba(255,212,168,0.5)" }}>C₄ — Costo de Déficit</span>
+                            <span className="text-[9px]" style={{ color: "rgba(196,82,42,0.6)" }}>$/ud·año</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs flex-shrink-0" style={{ color: "#C4522A" }}>&gt;&gt;</span>
+                            <input
+                              type="number"
+                              className="terminal-input flex-1"
+                              placeholder="80"
+                              value={form.C4}
+                              onChange={(e) => setField("C4", e.target.value)}
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+
+                {errorMsg && phase !== "streaming" && phase !== "calculating" && (
+                  <div className="text-xs" style={{ color: "#FF7050" }}>{errorMsg}</div>
+                )}
+
+                {/* Execute button */}
+                <button
+                  onClick={handleExecute}
+                  disabled={!canRun}
+                  className="w-full py-3 text-sm tracking-[0.2em] uppercase font-bold transition-all"
+                  style={{
+                    background: canRun ? "#C4522A" : "rgba(196,82,42,0.12)",
+                    color: canRun ? "#0A0300" : "rgba(255,255,255,0.25)",
+                    border: `1px solid ${canRun ? "#C4522A" : "rgba(196,82,42,0.2)"}`,
+                    fontFamily: "'Space Mono', monospace",
+                    cursor: canRun ? "pointer" : "not-allowed",
+                  }}
+                  onMouseEnter={(e) => { if (canRun) (e.currentTarget as HTMLButtonElement).style.background = "#FFD4A8"; }}
+                  onMouseLeave={(e) => { if (canRun) (e.currentTarget as HTMLButtonElement).style.background = "#C4522A"; }}
+                >
+                  {phase === "calculating" || phase === "streaming" ? "[ ANALIZANDO... ]" : ">> EJECUTAR ANÁLISIS"}
+                </button>
+              </div>
+
+              {/* Status bar */}
+              <div
+                className="relative z-10 flex items-center justify-between px-4 py-2"
+                style={{ borderTop: "1px solid rgba(196,82,42,0.3)", background: "rgba(0,0,0,0.4)" }}
+              >
+                <span
+                  className="text-[9px] tracking-[0.12em] uppercase hidden md:block"
+                  style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono', monospace" }}
+                >
+                  NEXTECH INDUSTRIES — INPUT SYSTEM // ULASB 2026
+                </span>
+                <span
+                  className="text-[9px] tracking-[0.1em]"
+                  style={{ color: canRun ? "rgba(74,222,128,0.7)" : "rgba(196,82,42,0.5)", fontFamily: "'Space Mono', monospace" }}
+                >
+                  [{canRun ? "LISTO" : "PROCESANDO"}]
+                </span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
