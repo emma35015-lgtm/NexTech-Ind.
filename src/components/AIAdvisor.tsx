@@ -149,7 +149,7 @@ function buildSteps(form: FormValues, model: ModelType, result: EOQResult): stri
 }
 
 async function* streamGemini(apiKey: string, prompt: string) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -479,7 +479,7 @@ export function AIAdvisor() {
                 style={{ background: "#4ADE80", boxShadow: "0 0 6px #4ADE80" }}
               />
               <span className="tva-label" style={{ color: "#4ADE80" }}>
-                CONECTADO — GEMINI 1.5 FLASH ✓
+                CONECTADO — GEMINI 2.0 FLASH ✓
               </span>
               <button
                 onClick={() => { setKeyConnected(false); setApiKey(""); sessionStorage.removeItem("nt_api_key"); }}
@@ -956,7 +956,7 @@ export function AIAdvisor() {
                     className="text-[9px] tracking-[0.1em]"
                     style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono', monospace" }}
                   >
-                    [MODELO: gemini-1.5-flash]
+                    [MODELO: gemini-2.0-flash]
                   </span>
                   <span
                     className="text-[9px] tracking-[0.1em]"
