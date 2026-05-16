@@ -148,28 +148,23 @@ function buildSteps(form: FormValues, model: ModelType, result: EOQResult): stri
   }
 }
 
-async function* streamClaude(apiKey: string, messages: { role: string; content: string }[]) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+async function* streamGemini(apiKey: string, prompt: string) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+  const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-      "content-type": "application/json",
-    },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 300,
-      stream: true,
-      system:
-        "Eres el asesor de inventario de NexTech Industries. Interpreta los resultados EOQ en español. Máximo 120 palabras. Sin saludos. Incluye: Q óptimo, implicaciones de CT, y 1-2 recomendaciones ejecutivas.",
-      messages,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      systemInstruction: {
+        parts: [{ text: "Eres el asesor de inventario de NexTech Industries. Interpreta los resultados EOQ en español. Máximo 120 palabras. Sin saludos. Incluye: Q óptimo, implicaciones de CT, y 1-2 recomendaciones ejecutivas." }],
+      },
+      generationConfig: { maxOutputTokens: 300 },
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`API ${res.status}: ${err}`);
+    throw new Error(`Gemini ${res.status}: ${err}`);
   }
 
   const reader = res.body!.getReader();
@@ -185,12 +180,11 @@ async function* streamClaude(apiKey: string, messages: { role: string; content: 
     for (const line of lines) {
       if (!line.startsWith("data:")) continue;
       const data = line.slice(5).trim();
-      if (data === "[DONE]") return;
+      if (!data || data === "[DONE]") continue;
       try {
         const ev = JSON.parse(data);
-        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") {
-          yield ev.delta.text as string;
-        }
+        const text = ev.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+        if (text) yield text;
       } catch {
         // ignore malformed SSE chunks
       }
@@ -300,8 +294,8 @@ export function AIAdvisor() {
 
   function connectKey() {
     const k = keyInput.trim();
-    if (!k.startsWith("sk-ant-")) {
-      setErrorMsg("ERR: Clave inválida — debe comenzar con sk-ant-");
+    if (k.length < 10) {
+      setErrorMsg("ERR: Clave inválida — debe comenzar con AIza...");
       return;
     }
     setApiKey(k);
@@ -369,7 +363,7 @@ export function AIAdvisor() {
       : `Producto: ${form.nombre}. Modelo EOQ Con Déficit. Q=${(res as EOQResultCon).Q}, S=${(res as EOQResultCon).S} uds agotadas/ciclo, IM=${(res as EOQResultCon).IM}, N=${(res as EOQResultCon).N.toFixed(1)} pedidos/año, t=${(res as EOQResultCon).t.toFixed(1)} días, CT=$${(res as EOQResultCon).CT.toLocaleString()}. D=${D}, C₁=${C1}, C₂=${C2}, C₃=${C3}, C₄=${C4}.`;
 
     try {
-      for await (const chunk of streamClaude(apiKey, [{ role: "user", content: prompt }])) {
+      for await (const chunk of streamGemini(apiKey, prompt)) {
         setAiText((t) => t + chunk);
       }
       setAiDone(true);
@@ -443,14 +437,16 @@ export function AIAdvisor() {
             >
               <div className="tva-label mb-4">&gt;_ AUTENTICACIÓN REQUERIDA</div>
               <p className="text-xs md:text-sm mb-4" style={{ color: "rgba(255,255,255,0.75)" }}>
-                Ingresa tu clave de API de Anthropic para activar el análisis con Claude AI.
+                Ingresa tu clave de API de Google Gemini (gratis en{" "}
+                <span style={{ color: "#FFD4A8" }}>aistudio.google.com</span>
+                {" → "}<span style={{ color: "#FFD4A8" }}>Get API key</span>).
                 La clave se guarda solo en esta sesión del navegador.
               </p>
               <div className="flex flex-col md:flex-row gap-3">
                 <input
                   type="password"
                   className="terminal-input flex-1"
-                  placeholder="sk-ant-..."
+                  placeholder="AIzaSy..."
                   value={keyInput}
                   onChange={(e) => setKeyInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && connectKey()}
@@ -483,7 +479,7 @@ export function AIAdvisor() {
                 style={{ background: "#4ADE80", boxShadow: "0 0 6px #4ADE80" }}
               />
               <span className="tva-label" style={{ color: "#4ADE80" }}>
-                CONECTADO — CLAUDE SONNET-4.6 ✓
+                CONECTADO — GEMINI 1.5 FLASH ✓
               </span>
               <button
                 onClick={() => { setKeyConnected(false); setApiKey(""); sessionStorage.removeItem("nt_api_key"); }}
@@ -960,7 +956,7 @@ export function AIAdvisor() {
                     className="text-[9px] tracking-[0.1em]"
                     style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono', monospace" }}
                   >
-                    [MODELO: claude-sonnet-4-6]
+                    [MODELO: gemini-1.5-flash]
                   </span>
                   <span
                     className="text-[9px] tracking-[0.1em]"
