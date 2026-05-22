@@ -5,8 +5,9 @@ import { motion, useScroll, useMotionValueEvent, type Variants } from "framer-mo
 import { Menu, Rocket } from "lucide-react";
 
 const navItems = [
-  { name: "Inicio", href: "#hero" },
-  { name: "Teoría", href: "#teoria" },
+  { name: "Inicio",   href: "#hero" },
+  { name: "Misiones", href: "#misiones" },
+  { name: "Teoría",   href: "#teoria" },
   { name: "Sin Déficit", href: "#sin-deficit" },
   { name: "Con Déficit", href: "#con-deficit" },
   { name: "IA Demo",     href: "#ai-demo" },

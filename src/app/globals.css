@@ -180,3 +180,9 @@ body {
   animation: tickTock 1.4s ease-in-out infinite;
   transform-origin: center 4%;
 }
+
+@keyframes orbitPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.7); }
+}
+.orbit-pulse { animation: orbitPulse 2s ease-in-out infinite; }

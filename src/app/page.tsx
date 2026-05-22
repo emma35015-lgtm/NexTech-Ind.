@@ -9,6 +9,8 @@ import { HeroSection } from "@/components/HeroSection";
 import { MarcoTeorico } from "@/components/MarcoTeorico";
 import { ProblemaSection } from "@/components/ProblemaSection";
 import { AIAdvisor } from "@/components/AIAdvisor";
+import { GlobeTracker } from "@/components/GlobeTracker";
+import { MissionProfile } from "@/components/MissionProfile";
 import { TablaComparativa } from "@/components/TablaComparativa";
 import { Conclusiones } from "@/components/Conclusiones";
 import { TeamSection } from "@/components/TeamSection";
@@ -27,6 +29,12 @@ export default function Home() {
 
           <main className="relative" style={{ paddingTop: "46px" }}>
             <HeroSection />
+
+            <RocketSeparator label="Misiones" />
+            <section id="misiones">
+              <GlobeTracker />
+              <MissionProfile />
+            </section>
 
             <RocketSeparator label="Marco Teórico" />
             <MarcoTeorico />
