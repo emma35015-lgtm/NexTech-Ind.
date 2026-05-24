@@ -2,281 +2,229 @@
 
 import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import type * as THREE from "three";
 
-/* ─── Mission data ─────────────────────────────────────────────── */
-const MISSIONS = [
-  { id: "NX-HEAVY 01",   vehicle: "NX-HEAVY",  payload: "NEXTECH-01",   orbit: "LEO  402 KM",   status: "ORBITAL" },
-  { id: "NX-LITE 07",    vehicle: "NX-LITE",   payload: "NEXSAT-07",    orbit: "SSO  550 KM",   status: "NOMINAL" },
-  { id: "SAT-DEPLOY 12", vehicle: "NX-HEAVY",  payload: "CLUSTER-12",   orbit: "GTO  35,786 KM", status: "DESPLIEGUE" },
+const VEHICLES = [
+  { name: "NX-12 · EXPLORER", hudName: "NX-12 / EXPLORER", cls: "Crew · Tier I",       payload: "Atmospheric survey",    window: "T+ 04:12 / 96.4 min",     alt: 420,   vel: 27880, period: 92.6,  inc: 51.6 },
+  { name: "NX-09 · ARC",      hudName: "NX-09 / ARC",      cls: "Cargo · Tier II",     payload: "Orbital relay nodes",  window: "T+ 11:48 / 296 min",      alt: 8240,  vel: 18760, period: 296.0, inc: 28.0 },
+  { name: "NX-04 · SENTINEL", hudName: "NX-04 / SENTINEL", cls: "Observation · Geo",   payload: "Earth-watch payload",  window: "T+ 23:56 / station-keep", alt: 35786, vel: 11070, period: 1436,  inc: 0.1  },
 ];
 
-/* incl° measured from equatorial plane; speed in rad/s; radius in Three.js units */
 const ORBITS = [
-  { incl: 28,  radius: 2.55, speed: 0.28 }, // LEO
-  { incl: 97,  radius: 2.65, speed: 0.24 }, // SSO
-  { incl: 0,   radius: 2.78, speed: 0.14 }, // GTO / equatorial
+  { a: 1.55, ecc: 0.02, tilt:  0.35, phase: 0,   speed:  0.55 },
+  { a: 2.40, ecc: 0.10, tilt: -0.42, phase: 1.7, speed: -0.30 },
+  { a: 3.55, ecc: 0.04, tilt:  0.12, phase: 3.3, speed:  0.16 },
 ];
 
-/* ─── Helpers ───────────────────────────────────────────────────── */
-function fmtMissionTime(s: number) {
+function fmtMissionTime(ms: number) {
+  const s = Math.floor(ms / 1000);
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `T+ ${d}D ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  const ss = s % 60;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `T+ ${d}D ${p(h)}:${p(m)}:${p(ss)}`;
 }
 
-/* ─── TVA Panel wrapper ─────────────────────────────────────────── */
-function TVAPanel({
-  children, headerLeft, headerRight, statusLeft, statusRight,
-}: {
-  children: React.ReactNode;
-  headerLeft: React.ReactNode;
-  headerRight?: React.ReactNode;
-  statusLeft?: React.ReactNode;
-  statusRight?: React.ReactNode;
-}) {
-  return (
-    <div
-      className="relative rounded-2xl overflow-hidden scanlines flex flex-col h-full"
-      style={{
-        background: "#0A0300",
-        border: "2px solid #C4522A",
-        boxShadow: "0 0 22px rgba(196,82,42,0.45), inset 0 0 40px rgba(196,82,42,0.06)",
-      }}
-    >
-      {/* CRT inner grid */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: [
-          "repeating-linear-gradient(rgba(196,82,42,0.06) 0px,rgba(196,82,42,0.06) 1px,transparent 1px,transparent 40px)",
-          "repeating-linear-gradient(90deg,rgba(196,82,42,0.06) 0px,rgba(196,82,42,0.06) 1px,transparent 1px,transparent 40px)",
-        ].join(","),
-      }} />
-      {/* Corner brackets */}
-      {(["┌","┐","└","┘"] as const).map((ch, i) => (
-        <span key={i} className="absolute text-sm pointer-events-none select-none z-20"
-          style={{
-            color: "rgba(196,82,42,0.5)", fontFamily: "'Space Mono',monospace",
-            top: i < 2 ? 6 : undefined, bottom: i >= 2 ? 6 : undefined,
-            left: i % 2 === 0 ? 8 : undefined, right: i % 2 === 1 ? 8 : undefined,
-          }}>{ch}</span>
-      ))}
-      {/* Header stripe */}
-      <div className="relative z-10 flex items-center justify-between px-4 h-9 flex-shrink-0"
-        style={{ background: "#C4522A" }}>
-        <span className="text-[10px] tracking-[0.15em] uppercase font-bold"
-          style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace" }}>{headerLeft}</span>
-        {headerRight && <div className="flex items-center gap-2">{headerRight}</div>}
-      </div>
-      {/* Body */}
-      <div className="relative z-10 flex-1 overflow-hidden">{children}</div>
-      {/* Status bar */}
-      {(statusLeft || statusRight) && (
-        <div className="relative z-10 flex items-center justify-between px-4 py-1.5 flex-shrink-0"
-          style={{ borderTop: "1px solid rgba(196,82,42,0.3)", background: "rgba(0,0,0,0.5)" }}>
-          <span className="text-[8px] tracking-[0.1em] uppercase"
-            style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono',monospace" }}>{statusLeft}</span>
-          <span className="text-[8px] tracking-[0.1em]"
-            style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono',monospace" }}>{statusRight}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── Main component ────────────────────────────────────────────── */
 export function GlobeTracker() {
-  const mountRef     = useRef<HTMLDivElement>(null);
-  const cancelledRef = useRef(false);
-  const cleanupRef   = useRef<(() => void) | null>(null);
+  const canvasRef      = useRef<HTMLCanvasElement>(null);
+  const stageRef       = useRef<HTMLDivElement>(null);
+  const activeOrbitRef = useRef(0);
+  const [activeOrbit, setActiveOrbit] = useState(0);
+  const [missionStartMs]              = useState(() => Date.now());
+  const [telemetry, setTelemetry]     = useState({ time: 0, vel: 27880, alt: 420, inc: 51.6, period: 92.6 });
 
-  // refs updated from Two.js setup → updated on tab change
-  const orbitRingsRef  = useRef<any[]>([]);  // THREE.Mesh[]
-  const markersRef     = useRef<any[]>([]);  // { marker, halo }[]
-  const activeTabRef   = useRef(0);
+  useEffect(() => { activeOrbitRef.current = activeOrbit; }, [activeOrbit]);
 
-  const [activeTab, setActiveTab] = useState(0);
-  const [telemetry, setTelemetry] = useState({ missionTime: 4_823, altitude: 401, speed: 27_600 });
-
-  /* Telemetry simulation */
   useEffect(() => {
-    const startMs = Date.now() - 4_823_000;
+    const v = VEHICLES[activeOrbit];
+    setTelemetry(prev => ({ ...prev, alt: v.alt, inc: v.inc, period: v.period, vel: v.vel }));
+  }, [activeOrbit]);
+
+  useEffect(() => {
     const id = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startMs) / 1000);
+      const v = VEHICLES[activeOrbitRef.current];
       setTelemetry({
-        missionTime: elapsed,
-        altitude: Math.round(380 + 40 * Math.abs(Math.sin(elapsed * 0.012))),
-        speed: 27_600 + Math.round(Math.sin(elapsed * 0.07) * 120),
+        time:   Date.now() - missionStartMs,
+        vel:    v.vel + Math.round((Math.random() - 0.5) * 30),
+        alt:    v.alt,
+        inc:    v.inc,
+        period: v.period,
       });
-    }, 1000);
+    }, 250);
     return () => clearInterval(id);
-  }, []);
+  }, [missionStartMs]);
 
-  /* Sync activeTab → refs → orbit materials */
   useEffect(() => {
-    activeTabRef.current = activeTab;
-    orbitRingsRef.current.forEach((ring, i) => {
-      if (!ring?.material) return;
-      ring.material.opacity = i === activeTab ? 0.6 : 0.1;
-      ring.material.color.setHex(i === activeTab ? 0xFFD4A8 : 0xC4522A);
-      ring.material.needsUpdate = true;
-    });
-    markersRef.current.forEach((g, i) => {
-      if (!g) return;
-      g.marker.visible = (i === activeTab);
-      g.halo.visible   = (i === activeTab);
-    });
-  }, [activeTab]);
+    const canvas = canvasRef.current;
+    const stage  = stageRef.current;
+    if (!canvas || !stage) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-  /* Three.js scene */
-  useEffect(() => {
-    cancelledRef.current = false;
-    let animFrame = 0;
+    let rafId = 0, t = 0, earthRot = 0, W = 0, H = 0, cx = 0, cy = 0, R = 0;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-    import("three").then((THREE) => {
-      if (cancelledRef.current || !mountRef.current) return;
-      const mount = mountRef.current;
+    const stars = Array.from({ length: 180 }, () => ({
+      x: Math.random(), y: Math.random(),
+      s: Math.random() * 1.2 + 0.2,
+      a: Math.random() * 0.5 + 0.1,
+      ph: Math.random() * Math.PI * 2,
+    }));
 
-      /* Renderer */
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(mount.clientWidth, mount.clientHeight);
-      renderer.setClearColor(0x000000, 0);
-      mount.appendChild(renderer.domElement);
+    function resize() {
+      const r = stage!.getBoundingClientRect();
+      W = Math.floor(r.width); H = Math.floor(r.height);
+      canvas!.width  = W * DPR; canvas!.height = H * DPR;
+      canvas!.style.width = W + "px"; canvas!.style.height = H + "px";
+      ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
+      cx = W * 0.5; cy = H * 0.5;
+      R  = Math.min(W, H) * 0.115;
+    }
+    resize();
 
-      /* Scene + Camera */
-      const scene  = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, mount.clientWidth / mount.clientHeight, 0.1, 100);
-      camera.position.set(0, 0.5, 7);
-      camera.lookAt(0, 0, 0);
+    const AXIAL = 0.38;
+    const SEG   = 80;
+    function project(lon: number, lat: number) {
+      const cl = Math.cos(lat), sl = Math.sin(lat);
+      const x = cl * Math.cos(lon);
+      const y0 = -sl, z0 = cl * Math.sin(lon);
+      const ct = Math.cos(AXIAL), st = Math.sin(AXIAL);
+      return { x: cx + x * R, y: cy + (y0 * ct - z0 * st) * R, z: y0 * st + z0 * ct };
+    }
 
-      /* ── Globe group (rotates on Y) ─────────────────────── */
-      const sphereGroup = new THREE.Group();
-      scene.add(sphereGroup);
+    function renderStars() {
+      for (const s of stars) {
+        ctx!.fillStyle = `rgba(255,240,220,${s.a * (0.7 + 0.3 * Math.sin(t * 1.5 + s.ph))})`;
+        ctx!.fillRect(s.x * W, s.y * H, s.s, s.s);
+      }
+    }
 
-      const sphereGeo = new THREE.SphereGeometry(2, 28, 18);
-      const wireGeo   = new THREE.WireframeGeometry(sphereGeo);
-      const wireMat   = new THREE.LineBasicMaterial({ color: 0xC4522A, transparent: true, opacity: 0.2 });
-      sphereGroup.add(new THREE.LineSegments(wireGeo, wireMat));
+    function drawMeridians(count: number, color: string, lw: number) {
+      ctx!.strokeStyle = color; ctx!.lineWidth = lw;
+      for (let m = 0; m < count; m++) {
+        const lon0 = (m * Math.PI * 2 / count) + earthRot;
+        ctx!.beginPath(); let started = false;
+        for (let i = 0; i <= SEG; i++) {
+          const p = project(lon0, -Math.PI / 2 + (i / SEG) * Math.PI);
+          if (p.z >= 0) { started ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); started = true; }
+          else { started = false; }
+        }
+        ctx!.stroke();
+      }
+    }
 
-      /* Prominent equator */
-      const eqGeo  = new THREE.TorusGeometry(2, 0.009, 4, 80);
-      const eqMat  = new THREE.MeshBasicMaterial({ color: 0xC4522A, transparent: true, opacity: 0.72 });
-      const eqMesh = new THREE.Mesh(eqGeo, eqMat);
-      eqMesh.rotation.x = Math.PI / 2;
-      sphereGroup.add(eqMesh);
+    function renderEarth() {
+      const g = ctx!.createRadialGradient(cx - R * 0.25, cy - R * 0.3, R * 0.1, cx, cy, R * 1.05);
+      g.addColorStop(0, "rgba(50,18,8,0.4)"); g.addColorStop(1, "rgba(10,3,0,0.9)");
+      ctx!.fillStyle = g;
+      ctx!.beginPath(); ctx!.arc(cx, cy, R, 0, Math.PI * 2); ctx!.fill();
 
-      /* 4 meridians */
-      const meriGeos: any[] = [], meriMats: any[] = [];
-      for (let i = 0; i < 4; i++) {
-        const g = new THREE.TorusGeometry(2, 0.006, 4, 64);
-        const m = new THREE.MeshBasicMaterial({ color: 0xC4522A, transparent: true, opacity: 0.42 });
-        const mesh = new THREE.Mesh(g, m);
-        mesh.rotation.y = (i * 45 * Math.PI) / 180;
-        sphereGroup.add(mesh);
-        meriGeos.push(g); meriMats.push(m);
+      drawMeridians(12, "rgba(196,82,42,0.2)", 0.6);
+      drawMeridians(4,  "rgba(196,82,42,0.4)", 0.8);
+
+      ctx!.strokeStyle = "rgba(196,82,42,0.17)"; ctx!.lineWidth = 0.5;
+      for (let lat = -Math.PI / 2 + Math.PI / 12; lat < Math.PI / 2 - 0.01; lat += Math.PI / 12) {
+        ctx!.beginPath(); let started = false;
+        for (let i = 0; i <= SEG; i++) {
+          const p = project((i / SEG) * Math.PI * 2, lat);
+          if (p.z >= 0) { started ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); started = true; }
+          else { started = false; }
+        }
+        ctx!.stroke();
       }
 
-      /* ── 3 Orbit rings (fixed in scene) ─────────────────── */
-      const orbitGeos: any[] = [], orbitMats: any[] = [];
-      const orbitMeshes: any[] = [];
-      ORBITS.forEach((orb, i) => {
-        const g = new THREE.TorusGeometry(orb.radius, 0.007, 4, 128);
-        const m = new THREE.MeshBasicMaterial({
-          color: i === 0 ? 0xFFD4A8 : 0xC4522A,
-          transparent: true,
-          opacity: i === 0 ? 0.6 : 0.1,
-        });
-        const mesh = new THREE.Mesh(g, m);
-        mesh.rotation.x = Math.PI / 2;
-        mesh.rotation.z = (orb.incl * Math.PI) / 180;
-        scene.add(mesh);
-        orbitGeos.push(g); orbitMats.push(m); orbitMeshes.push(mesh);
-      });
-      orbitRingsRef.current = orbitMeshes;
+      ctx!.strokeStyle = "rgba(196,82,42,0.65)"; ctx!.lineWidth = 0.9;
+      ctx!.beginPath(); let started = false;
+      for (let i = 0; i <= SEG * 2; i++) {
+        const p = project((i / (SEG * 2)) * Math.PI * 2, 0);
+        if (p.z >= 0) { started ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); started = true; }
+        else { started = false; }
+      }
+      ctx!.stroke();
 
-      /* ── 3 Markers ───────────────────────────────────────── */
-      const markerData: { marker: any; halo: any; markerGeo: any; markerMat: any; haloGeo: any; haloMat: any }[] = [];
-      ORBITS.forEach((_, i) => {
-        const markerGeo = new THREE.SphereGeometry(0.05, 8, 8);
-        const markerMat = new THREE.MeshBasicMaterial({ color: 0xFFD4A8 });
-        const marker    = new THREE.Mesh(markerGeo, markerMat);
-        marker.visible  = (i === 0);
-        scene.add(marker);
+      ctx!.strokeStyle = "rgba(255,240,220,0.7)"; ctx!.lineWidth = 1.0;
+      ctx!.beginPath(); ctx!.arc(cx, cy, R, 0, Math.PI * 2); ctx!.stroke();
 
-        const haloGeo = new THREE.SphereGeometry(0.1, 8, 8);
-        const haloMat = new THREE.MeshBasicMaterial({ color: 0xFFD4A8, transparent: true, opacity: 0.22 });
-        const halo    = new THREE.Mesh(haloGeo, haloMat);
-        halo.visible  = (i === 0);
-        scene.add(halo);
+      ctx!.save();
+      const halo = ctx!.createRadialGradient(cx, cy, R * 0.99, cx, cy, R * 1.18);
+      halo.addColorStop(0, "rgba(196,82,42,0)");
+      halo.addColorStop(0.45, "rgba(196,82,42,0.18)");
+      halo.addColorStop(1, "rgba(196,82,42,0)");
+      ctx!.fillStyle = halo;
+      ctx!.beginPath(); ctx!.arc(cx, cy, R * 1.22, 0, Math.PI * 2); ctx!.fill();
+      ctx!.restore();
+    }
 
-        markerData.push({ marker, halo, markerGeo, markerMat, haloGeo, haloMat });
-      });
-      markersRef.current = markerData;
+    function drawOrbit(o: typeof ORBITS[0], i: number) {
+      const a = R * o.a, b = a * Math.sqrt(1 - o.ecc * o.ecc);
+      const isActive = i === activeOrbitRef.current;
+      ctx!.save(); ctx!.translate(cx, cy); ctx!.rotate(o.tilt);
 
-      /* ── Animation loop ──────────────────────────────────── */
-      const clock = new THREE.Clock();
-      const animate = () => {
-        animFrame = requestAnimationFrame(animate);
-        sphereGroup.rotation.y += 0.0012;
-        const t = clock.getElapsedTime();
-        ORBITS.forEach((orb, i) => {
-          const { marker, halo } = markerData[i];
-          const incl = (orb.incl * Math.PI) / 180;
-          const R    = orb.radius;
-          const ang  = t * orb.speed;
-          const x    = R * Math.cos(ang) * Math.cos(incl);
-          const y    = R * Math.cos(ang) * Math.sin(incl);
-          const z    = R * Math.sin(ang);
-          marker.position.set(x, y, z);
-          halo.position.set(x, y, z);
-        });
-        renderer.render(scene, camera);
-      };
-      animate();
+      ctx!.beginPath(); ctx!.ellipse(0, 0, a, b, 0, 0, Math.PI * 2);
+      if (isActive) {
+        ctx!.strokeStyle = "rgba(196,82,42,0.9)"; ctx!.lineWidth = 1.0;
+        ctx!.shadowColor = "rgba(196,82,42,0.5)"; ctx!.shadowBlur = 10;
+      } else {
+        ctx!.strokeStyle = "rgba(255,240,220,0.16)"; ctx!.lineWidth = 0.6;
+        ctx!.setLineDash([3, 5]);
+      }
+      ctx!.stroke(); ctx!.setLineDash([]); ctx!.shadowBlur = 0;
 
-      /* ── Resize ──────────────────────────────────────────── */
-      const handleResize = () => {
-        if (!mountRef.current) return;
-        const w = mountRef.current.clientWidth;
-        const h = mountRef.current.clientHeight;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-      };
-      window.addEventListener("resize", handleResize);
+      const ang = o.phase + t * o.speed;
+      const px = Math.cos(ang) * a, py = Math.sin(ang) * b;
+      const sgn = Math.sign(o.speed);
+      const tAng = Math.atan2(Math.cos(ang) * b * sgn, -Math.sin(ang) * a * sgn);
 
-      /* ── Cleanup ─────────────────────────────────────────── */
-      cleanupRef.current = () => {
-        cancelAnimationFrame(animFrame);
-        window.removeEventListener("resize", handleResize);
-        renderer.dispose();
-        [sphereGeo, wireGeo, wireMat, eqGeo, eqMat,
-          ...meriGeos, ...meriMats,
-          ...orbitGeos, ...orbitMats,
-        ].forEach((o: any) => o?.dispose?.());
-        markerData.forEach(({ markerGeo, markerMat, haloGeo, haloMat }) => {
-          markerGeo.dispose(); markerMat.dispose(); haloGeo.dispose(); haloMat.dispose();
-        });
-        if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
-      };
-    });
+      ctx!.save(); ctx!.translate(px, py);
+      if (isActive) {
+        ctx!.beginPath(); ctx!.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx!.strokeStyle = "rgba(255,212,168,0.55)"; ctx!.lineWidth = 0.8;
+        ctx!.shadowColor = "rgba(255,212,168,0.45)"; ctx!.shadowBlur = 10;
+        ctx!.stroke(); ctx!.shadowBlur = 0;
+      }
+      ctx!.rotate(tAng + Math.PI / 2);
+      const col = isActive ? "#FFD4A8" : "rgba(255,212,168,0.45)";
+      ctx!.strokeStyle = col; ctx!.lineWidth = 1;
+      ctx!.beginPath();
+      ctx!.moveTo(0, -6); ctx!.lineTo(2.6, -2); ctx!.lineTo(2.6, 4);
+      ctx!.lineTo(-2.6, 4); ctx!.lineTo(-2.6, -2); ctx!.closePath();
+      ctx!.stroke();
+      if (isActive) {
+        ctx!.fillStyle = "#C4522A";
+        ctx!.beginPath(); ctx!.moveTo(-1.8, 4); ctx!.lineTo(0, 8); ctx!.lineTo(1.8, 4); ctx!.closePath(); ctx!.fill();
+      }
+      ctx!.strokeStyle = col;
+      ctx!.beginPath();
+      ctx!.moveTo(-2.6, 1); ctx!.lineTo(-4.2, 4); ctx!.lineTo(-2.6, 4);
+      ctx!.moveTo( 2.6, 1); ctx!.lineTo( 4.2, 4); ctx!.lineTo( 2.6, 4);
+      ctx!.stroke();
+      ctx!.restore(); ctx!.restore();
+    }
 
-    return () => {
-      cancelledRef.current = true;
-      cleanupRef.current?.();
-      cleanupRef.current = null;
-    };
+    let last = performance.now();
+    function loop(now: number) {
+      rafId = requestAnimationFrame(loop);
+      const dt = (now - last) / 1000; last = now;
+      t += dt; earthRot += dt * 0.10;
+      ctx!.fillStyle = "#0A0300"; ctx!.fillRect(0, 0, W, H);
+      renderStars(); renderEarth();
+      ORBITS.forEach((o, i) => { if (i !== activeOrbitRef.current) drawOrbit(o, i); });
+      drawOrbit(ORBITS[activeOrbitRef.current], activeOrbitRef.current);
+    }
+    rafId = requestAnimationFrame(loop);
+
+    const onResize = () => resize();
+    window.addEventListener("resize", onResize);
+    return () => { cancelAnimationFrame(rafId); window.removeEventListener("resize", onResize); };
   }, []);
 
-  const mission = MISSIONS[activeTab];
+  const vehicle = VEHICLES[activeOrbit];
+  const ORBIT_LABELS = ["LEO · 420 km", "MEO · 8 240 km", "GEO · 35 786 km"];
 
   return (
     <div className="py-12 md:py-16 px-4 md:px-16">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* Section header */}
         <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <div className="tva-label mb-2">&gt;_ NEXTECH INDUSTRIES</div>
           <h2 className="text-3xl md:text-5xl font-bold uppercase tracking-[0.08em] mb-1"
@@ -289,118 +237,199 @@ export function GlobeTracker() {
           <div className="h-px w-16" style={{ background: "rgba(255,255,255,0.3)" }} />
         </motion.div>
 
-        {/* Globe + Telemetry */}
         <motion.div
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ delay: 0.15 }}
-          className="flex flex-col md:grid md:grid-cols-[290px_1fr] gap-4"
-          style={{ minHeight: 400 }}
+          className="grid grid-cols-1 md:grid-cols-[310px_1fr] gap-4 items-start"
         >
           {/* ── Telemetry panel ── */}
-          <TVAPanel
-            headerLeft="NEXTECH TRACKING"
-            headerRight={
-              <>
+          <div className="relative rounded-2xl overflow-hidden scanlines flex flex-col"
+            style={{
+              background: "#0A0300",
+              border: "2px solid #C4522A",
+              boxShadow: "0 0 22px rgba(196,82,42,0.4), inset 0 0 40px rgba(196,82,42,0.06)",
+            }}>
+            <div className="absolute inset-0 pointer-events-none z-0" style={{
+              backgroundImage: [
+                "repeating-linear-gradient(rgba(196,82,42,0.05) 0px,rgba(196,82,42,0.05) 1px,transparent 1px,transparent 40px)",
+                "repeating-linear-gradient(90deg,rgba(196,82,42,0.05) 0px,rgba(196,82,42,0.05) 1px,transparent 1px,transparent 40px)",
+              ].join(","),
+            }} />
+            {(["┌","┐","└","┘"] as const).map((ch, i) => (
+              <span key={i} className="absolute text-sm pointer-events-none select-none z-20"
+                style={{
+                  color: "rgba(196,82,42,0.5)", fontFamily: "'Space Mono',monospace",
+                  top: i < 2 ? 6 : undefined, bottom: i >= 2 ? 6 : undefined,
+                  left: i % 2 === 0 ? 8 : undefined, right: i % 2 === 1 ? 8 : undefined,
+                }}>{ch}</span>
+            ))}
+            {/* Header */}
+            <div className="relative z-10 flex items-center justify-between px-4 h-9 flex-shrink-0"
+              style={{ background: "#C4522A" }}>
+              <span className="text-[10px] tracking-[0.15em] uppercase font-bold"
+                style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace" }}>
+                NEXTECH TRACKING
+              </span>
+              <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full orbit-pulse"
-                  style={{ background: "#4ADE80", boxShadow: "0 0 6px #4ADE80" }} />
-                <span className="text-[9px] tracking-[0.12em] uppercase"
+                  style={{ background: "#0A0300", boxShadow: "0 0 4px #0A0300" }} />
+                <span className="text-[9px] tracking-[0.12em] uppercase font-bold"
                   style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace" }}>LIVE</span>
-              </>
-            }
-            statusLeft="NEXTECH FLEET"
-            statusRight="[ULASB 2026]"
-          >
-            {/* Mission tabs */}
-            <div className="flex border-b" style={{ borderColor: "rgba(196,82,42,0.3)" }}>
-              {MISSIONS.map((m, i) => (
-                <button key={i} onClick={() => setActiveTab(i)}
-                  className="flex-1 text-[8px] tracking-[0.06em] uppercase py-2 transition-all"
+              </div>
+            </div>
+
+            {/* Status pill + tabs */}
+            <div className="relative z-10 p-3 pb-0 flex flex-col gap-2">
+              <div className="flex items-center gap-2 py-1.5 px-2 rounded"
+                style={{ border: "1px solid rgba(196,82,42,0.25)", background: "rgba(196,82,42,0.05)" }}>
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: "#4ADE80", boxShadow: "0 0 8px #4ADE80", animation: "orbitPulse 2s ease-in-out infinite" }} />
+                <span className="text-[9px] tracking-[0.14em] uppercase"
+                  style={{ color: "#FFD4A8", fontFamily: "'Space Mono',monospace" }}>
+                  Acquiring telemetry
+                </span>
+              </div>
+              {VEHICLES.map((v, i) => (
+                <button key={i} onClick={() => setActiveOrbit(i)}
+                  className="text-left px-3 py-2 rounded transition-all"
                   style={{
-                    fontFamily: "'Space Mono',monospace",
-                    background: activeTab === i ? "rgba(196,82,42,0.2)" : "transparent",
-                    color: activeTab === i ? "#FFD4A8" : "rgba(255,212,168,0.3)",
-                    borderBottom: activeTab === i ? "2px solid #C4522A" : "2px solid transparent",
+                    fontFamily: "'Space Mono',monospace", fontSize: 10,
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    background:   activeOrbit === i ? "rgba(196,82,42,0.12)" : "transparent",
+                    color:        activeOrbit === i ? "#C4522A" : "rgba(255,212,168,0.3)",
+                    border:       `1px solid ${activeOrbit === i ? "#C4522A" : "rgba(255,212,168,0.1)"}`,
+                    boxShadow:    activeOrbit === i ? "0 0 18px -6px rgba(196,82,42,0.6), inset 0 0 0 1px rgba(196,82,42,0.2)" : "none",
                     cursor: "pointer",
                   }}>
-                  {m.id}
+                  {v.name}
+                  {activeOrbit === i && (
+                    <span className="float-right" style={{ fontSize: 6, color: "#C4522A" }}>●</span>
+                  )}
                 </button>
               ))}
             </div>
-
-            {/* Orbit legend */}
-            <div className="px-4 pt-3 pb-1 flex flex-col gap-1.5">
-              {MISSIONS.map((m, i) => (
-                <button key={i} onClick={() => setActiveTab(i)}
-                  className="flex items-center gap-2 transition-all"
-                  style={{ cursor: "pointer", background: "none", border: "none" }}>
-                  <svg width="28" height="10">
-                    <ellipse cx="14" cy="5" rx="12" ry="3.5"
-                      fill="none"
-                      stroke={i === activeTab ? "#FFD4A8" : "rgba(196,82,42,0.35)"}
-                      strokeWidth={i === activeTab ? "1.5" : "0.8"} />
-                    {i === activeTab && (
-                      <circle cx="24" cy="5" r="2" fill="#FFD4A8" />
-                    )}
-                  </svg>
-                  <span className="text-[9px] tracking-[0.1em] uppercase"
-                    style={{
-                      fontFamily: "'Space Mono',monospace",
-                      color: i === activeTab ? "#FFD4A8" : "rgba(255,212,168,0.3)",
-                    }}>
-                    {m.id}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="h-px mx-4 mt-2" style={{ background: "rgba(196,82,42,0.25)" }} />
 
             {/* Telemetry rows */}
-            <div className="p-4 space-y-2.5" style={{ fontFamily: "'Space Mono',monospace" }}>
+            <div className="relative z-10 px-3 pt-3 pb-2 mt-2"
+              style={{ borderTop: "1px solid rgba(196,82,42,0.18)", fontFamily: "'Space Mono',monospace" }}>
               {[
-                { label: "MISIÓN TIME", value: fmtMissionTime(telemetry.missionTime) },
-                { label: "ALTITUD",     value: `${telemetry.altitude.toLocaleString()} KM` },
-                { label: "VELOCIDAD",   value: `${telemetry.speed.toLocaleString()} KM/H` },
-                { label: "VEHÍCULO",    value: mission.vehicle },
-                { label: "CARGA ÚTIL",  value: mission.payload },
-                { label: "ÓRBITA",      value: mission.orbit },
+                { label: "MISSION TIME",  value: fmtMissionTime(telemetry.time) },
+                { label: "ORB. VELOCITY", value: `${telemetry.vel.toLocaleString("en-US")} km/h` },
+                { label: "ALTITUDE",      value: `${telemetry.alt.toLocaleString("en-US")} km` },
+                { label: "INCLINATION",   value: `${telemetry.inc.toFixed(1)}° eq` },
+                { label: "ORBIT PERIOD",  value: `${telemetry.period} min` },
               ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between gap-2">
-                  <span className="text-[9px] tracking-[0.1em] uppercase flex-shrink-0"
-                    style={{ color: "rgba(196,82,42,0.7)" }}>{row.label}</span>
-                  <span className="text-[10px] font-bold text-right" style={{ color: "#FFD4A8" }}>
+                <div key={row.label} className="flex justify-between items-baseline gap-2 py-2"
+                  style={{ borderBottom: "1px solid rgba(196,82,42,0.1)" }}>
+                  <span className="text-[9px] tracking-[0.18em] uppercase flex-shrink-0"
+                    style={{ color: "rgba(196,82,42,0.65)" }}>{row.label}</span>
+                  <span className="text-[11px] font-bold text-right" style={{ color: "#FFD4A8" }}>
                     {row.value}
                   </span>
                 </div>
               ))}
-              <div className="h-px" style={{ background: "rgba(196,82,42,0.25)" }} />
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] tracking-[0.1em] uppercase"
-                  style={{ color: "rgba(196,82,42,0.7)" }}>ESTADO</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full orbit-pulse"
-                    style={{ background: "#4ADE80", boxShadow: "0 0 6px #4ADE80" }} />
-                  <span className="text-[10px] font-bold" style={{ color: "#4ADE80" }}>
-                    {mission.status}
+            </div>
+
+            {/* Meta stamp */}
+            <div className="relative z-10 mx-3 mb-3 mt-2 p-3"
+              style={{
+                border: "1px solid rgba(196,82,42,0.2)",
+                background: "repeating-linear-gradient(45deg,transparent 0 8px,rgba(196,82,42,0.02) 8px 9px)",
+                fontFamily: "'Space Mono',monospace",
+              }}>
+              {[
+                { label: "VEHICLE CLASS", value: vehicle.cls },
+                { label: "PAYLOAD",       value: vehicle.payload },
+                { label: "WINDOW",        value: vehicle.window },
+              ].map((r) => (
+                <div key={r.label} className="flex justify-between gap-2 py-0.5" style={{ fontSize: 9 }}>
+                  <span style={{ color: "rgba(196,82,42,0.6)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                    {r.label}
                   </span>
+                  <span style={{ color: "#E0C4A0" }}>{r.value}</span>
                 </div>
+              ))}
+              <div className="flex items-center gap-2 mt-2">
+                <svg viewBox="0 0 60 60" fill="none" width="26" height="26" style={{ opacity: 0.65, color: "#C4522A", flexShrink: 0 }}>
+                  <circle cx="30" cy="30" r="28" stroke="currentColor" strokeWidth="0.8"/>
+                  <circle cx="30" cy="30" r="20" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 3"/>
+                  <path d="M30 8 L34 30 L30 52 L26 30 Z" stroke="currentColor" strokeWidth="0.8"/>
+                  <circle cx="30" cy="30" r="3" stroke="currentColor" strokeWidth="0.5"/>
+                </svg>
+                <span style={{ color: "rgba(196,82,42,0.7)", fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.08em", fontStyle: "italic" }}>
+                  Authorized · Nx flight ops, 2026
+                </span>
               </div>
             </div>
-          </TVAPanel>
+
+            {/* Status bar */}
+            <div className="relative z-10 flex items-center justify-between px-4 py-1.5 flex-shrink-0"
+              style={{ borderTop: "1px solid rgba(196,82,42,0.3)", background: "rgba(0,0,0,0.5)" }}>
+              <span className="text-[8px] tracking-[0.1em] uppercase"
+                style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono',monospace" }}>NEXTECH FLEET</span>
+              <span className="text-[8px] tracking-[0.1em]"
+                style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono',monospace" }}>[ULASB 2026]</span>
+            </div>
+          </div>
 
           {/* ── Globe canvas ── */}
-          <div
-            ref={mountRef}
-            className="rounded-2xl overflow-hidden"
+          <div ref={stageRef} className="relative overflow-hidden rounded-2xl"
             style={{
-              height: 420,
-              minHeight: 260,
-              background:
-                "radial-gradient(ellipse at 52% 48%, rgba(196,82,42,0.1) 0%, rgba(10,3,0,0.92) 60%, #0A0300 100%)",
+              height: 520,
               border: "2px solid rgba(196,82,42,0.3)",
-              boxShadow: "0 0 22px rgba(196,82,42,0.2), inset 0 0 40px rgba(196,82,42,0.04)",
-            }}
-          />
+              background: "radial-gradient(ellipse at center,rgba(196,82,42,0.06) 0%,transparent 70%)",
+              boxShadow: "0 0 22px rgba(196,82,42,0.15), inset 0 0 40px rgba(196,82,42,0.04)",
+            }}>
+            <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+
+            {/* HUD corners */}
+            <div className="absolute top-3 left-3 pointer-events-none"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              Reference · Geocentric
+              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>EQUATORIAL · J2000</div>
+            </div>
+            <div className="absolute top-3 right-3 text-right pointer-events-none"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              Feed
+              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>{vehicle.hudName}</div>
+            </div>
+            <div className="absolute bottom-10 left-3 pointer-events-none"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              Frame Lock
+              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>STABLE · 0.04 σ</div>
+            </div>
+            <div className="absolute bottom-10 right-3 text-right pointer-events-none"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              Status
+              <div className="mt-0.5" style={{ fontSize: 11, color: "#4ADE80", letterSpacing: "0.12em" }}>ORBITAL · LIVE</div>
+            </div>
+
+            {/* Corner brackets */}
+            {(["┌","┐","└","┘"] as const).map((ch, i) => (
+              <span key={i} className="absolute text-sm pointer-events-none select-none"
+                style={{
+                  color: "rgba(196,82,42,0.3)", fontFamily: "'Space Mono',monospace",
+                  top: i < 2 ? 6 : undefined, bottom: i >= 2 ? 6 : undefined,
+                  left: i % 2 === 0 ? 8 : undefined, right: i % 2 === 1 ? 8 : undefined,
+                }}>{ch}</span>
+            ))}
+
+            {/* Orbit legend */}
+            <div className="absolute bottom-3 left-6 flex flex-col gap-1.5 pointer-events-none">
+              {ORBIT_LABELS.map((label, o) => (
+                <button key={o} onClick={() => setActiveOrbit(o)}
+                  className="flex items-center gap-2 transition-all pointer-events-auto"
+                  style={{ background: "none", border: "none", cursor: "pointer",
+                    color: o === activeOrbit ? "#C4522A" : "rgba(196,82,42,0.32)",
+                    opacity: o === activeOrbit ? 1 : 0.55 }}>
+                  <div style={{ width: 18, height: 1, background: "currentColor",
+                    boxShadow: o === activeOrbit ? "0 0 6px currentColor" : "none" }} />
+                  <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9,
+                    letterSpacing: "0.14em", textTransform: "uppercase" }}>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>
