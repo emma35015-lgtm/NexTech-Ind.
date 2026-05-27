@@ -4,9 +4,9 @@ import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 const VEHICLES = [
-  { name: "NX-12 · EXPLORER", hudName: "NX-12 / EXPLORER", cls: "Crew · Tier I",       payload: "Atmospheric survey",    window: "T+ 04:12 / 96.4 min",     alt: 420,   vel: 27880, period: 92.6,  inc: 51.6 },
-  { name: "NX-09 · ARC",      hudName: "NX-09 / ARC",      cls: "Cargo · Tier II",     payload: "Orbital relay nodes",  window: "T+ 11:48 / 296 min",      alt: 8240,  vel: 18760, period: 296.0, inc: 28.0 },
-  { name: "NX-04 · SENTINEL", hudName: "NX-04 / SENTINEL", cls: "Observation · Geo",   payload: "Earth-watch payload",  window: "T+ 23:56 / station-keep", alt: 35786, vel: 11070, period: 1436,  inc: 0.1  },
+  { name: "NX-12 · EXPLORER", hudName: "NX-12 / EXPLORER", cls: "Crew · Tier I",     payload: "Atmospheric survey",    window: "T+ 04:12 / 96.4 min",     alt: 420,   vel: 27880, period: 92.6,  inc: 51.6 },
+  { name: "NX-09 · ARC",      hudName: "NX-09 / ARC",      cls: "Cargo · Tier II",   payload: "Orbital relay nodes",  window: "T+ 11:48 / 296 min",      alt: 8240,  vel: 18760, period: 296.0, inc: 28.0 },
+  { name: "NX-04 · SENTINEL", hudName: "NX-04 / SENTINEL", cls: "Observation · Geo", payload: "Earth-watch payload",  window: "T+ 23:56 / station-keep", alt: 35786, vel: 11070, period: 1436,  inc: 0.1  },
 ];
 
 const ORBITS = [
@@ -14,6 +14,8 @@ const ORBITS = [
   { a: 2.40, ecc: 0.10, tilt: -0.42, phase: 1.7, speed: -0.30 },
   { a: 3.55, ecc: 0.04, tilt:  0.12, phase: 3.3, speed:  0.16 },
 ];
+
+const ORBIT_LABELS = ["LEO · 420 km", "MEO · 8 240 km", "GEO · 35 786 km"];
 
 function fmtMissionTime(ms: number) {
   const s = Math.floor(ms / 1000);
@@ -46,9 +48,7 @@ export function GlobeTracker() {
       setTelemetry({
         time:   Date.now() - missionStartMs,
         vel:    v.vel + Math.round((Math.random() - 0.5) * 30),
-        alt:    v.alt,
-        inc:    v.inc,
-        period: v.period,
+        alt:    v.alt, inc: v.inc, period: v.period,
       });
     }, 250);
     return () => clearInterval(id);
@@ -64,7 +64,7 @@ export function GlobeTracker() {
     let rafId = 0, t = 0, earthRot = 0, W = 0, H = 0, cx = 0, cy = 0, R = 0;
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-    const stars = Array.from({ length: 180 }, () => ({
+    const stars = Array.from({ length: 150 }, () => ({
       x: Math.random(), y: Math.random(),
       s: Math.random() * 1.2 + 0.2,
       a: Math.random() * 0.5 + 0.1,
@@ -78,12 +78,11 @@ export function GlobeTracker() {
       canvas!.style.width = W + "px"; canvas!.style.height = H + "px";
       ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
       cx = W * 0.5; cy = H * 0.5;
-      R  = Math.min(W, H) * 0.115;
+      R  = Math.min(W, H) * 0.14;
     }
     resize();
 
-    const AXIAL = 0.38;
-    const SEG   = 80;
+    const AXIAL = 0.38, SEG = 80;
     function project(lon: number, lat: number) {
       const cl = Math.cos(lat), sl = Math.sin(lat);
       const x = cl * Math.cos(lon);
@@ -103,11 +102,11 @@ export function GlobeTracker() {
       ctx!.strokeStyle = color; ctx!.lineWidth = lw;
       for (let m = 0; m < count; m++) {
         const lon0 = (m * Math.PI * 2 / count) + earthRot;
-        ctx!.beginPath(); let started = false;
+        ctx!.beginPath(); let ok = false;
         for (let i = 0; i <= SEG; i++) {
           const p = project(lon0, -Math.PI / 2 + (i / SEG) * Math.PI);
-          if (p.z >= 0) { started ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); started = true; }
-          else { started = false; }
+          if (p.z >= 0) { ok ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); ok = true; }
+          else { ok = false; }
         }
         ctx!.stroke();
       }
@@ -118,33 +117,28 @@ export function GlobeTracker() {
       g.addColorStop(0, "rgba(50,18,8,0.4)"); g.addColorStop(1, "rgba(10,3,0,0.9)");
       ctx!.fillStyle = g;
       ctx!.beginPath(); ctx!.arc(cx, cy, R, 0, Math.PI * 2); ctx!.fill();
-
       drawMeridians(12, "rgba(196,82,42,0.2)", 0.6);
       drawMeridians(4,  "rgba(196,82,42,0.4)", 0.8);
-
       ctx!.strokeStyle = "rgba(196,82,42,0.17)"; ctx!.lineWidth = 0.5;
       for (let lat = -Math.PI / 2 + Math.PI / 12; lat < Math.PI / 2 - 0.01; lat += Math.PI / 12) {
-        ctx!.beginPath(); let started = false;
+        ctx!.beginPath(); let ok = false;
         for (let i = 0; i <= SEG; i++) {
           const p = project((i / SEG) * Math.PI * 2, lat);
-          if (p.z >= 0) { started ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); started = true; }
-          else { started = false; }
+          if (p.z >= 0) { ok ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); ok = true; }
+          else { ok = false; }
         }
         ctx!.stroke();
       }
-
       ctx!.strokeStyle = "rgba(196,82,42,0.65)"; ctx!.lineWidth = 0.9;
-      ctx!.beginPath(); let started = false;
+      ctx!.beginPath(); let eqOk = false;
       for (let i = 0; i <= SEG * 2; i++) {
         const p = project((i / (SEG * 2)) * Math.PI * 2, 0);
-        if (p.z >= 0) { started ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); started = true; }
-        else { started = false; }
+        if (p.z >= 0) { eqOk ? ctx!.lineTo(p.x, p.y) : ctx!.moveTo(p.x, p.y); eqOk = true; }
+        else { eqOk = false; }
       }
       ctx!.stroke();
-
       ctx!.strokeStyle = "rgba(255,240,220,0.7)"; ctx!.lineWidth = 1.0;
       ctx!.beginPath(); ctx!.arc(cx, cy, R, 0, Math.PI * 2); ctx!.stroke();
-
       ctx!.save();
       const halo = ctx!.createRadialGradient(cx, cy, R * 0.99, cx, cy, R * 1.18);
       halo.addColorStop(0, "rgba(196,82,42,0)");
@@ -159,7 +153,6 @@ export function GlobeTracker() {
       const a = R * o.a, b = a * Math.sqrt(1 - o.ecc * o.ecc);
       const isActive = i === activeOrbitRef.current;
       ctx!.save(); ctx!.translate(cx, cy); ctx!.rotate(o.tilt);
-
       ctx!.beginPath(); ctx!.ellipse(0, 0, a, b, 0, 0, Math.PI * 2);
       if (isActive) {
         ctx!.strokeStyle = "rgba(196,82,42,0.9)"; ctx!.lineWidth = 1.0;
@@ -169,15 +162,13 @@ export function GlobeTracker() {
         ctx!.setLineDash([3, 5]);
       }
       ctx!.stroke(); ctx!.setLineDash([]); ctx!.shadowBlur = 0;
-
       const ang = o.phase + t * o.speed;
       const px = Math.cos(ang) * a, py = Math.sin(ang) * b;
       const sgn = Math.sign(o.speed);
       const tAng = Math.atan2(Math.cos(ang) * b * sgn, -Math.sin(ang) * a * sgn);
-
       ctx!.save(); ctx!.translate(px, py);
       if (isActive) {
-        ctx!.beginPath(); ctx!.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx!.beginPath(); ctx!.arc(0, 0, 12, 0, Math.PI * 2);
         ctx!.strokeStyle = "rgba(255,212,168,0.55)"; ctx!.lineWidth = 0.8;
         ctx!.shadowColor = "rgba(255,212,168,0.45)"; ctx!.shadowBlur = 10;
         ctx!.stroke(); ctx!.shadowBlur = 0;
@@ -212,19 +203,18 @@ export function GlobeTracker() {
       drawOrbit(ORBITS[activeOrbitRef.current], activeOrbitRef.current);
     }
     rafId = requestAnimationFrame(loop);
-
     const onResize = () => resize();
     window.addEventListener("resize", onResize);
     return () => { cancelAnimationFrame(rafId); window.removeEventListener("resize", onResize); };
   }, []);
 
   const vehicle = VEHICLES[activeOrbit];
-  const ORBIT_LABELS = ["LEO · 420 km", "MEO · 8 240 km", "GEO · 35 786 km"];
 
   return (
-    <div className="py-12 md:py-16 px-4 md:px-16">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="py-10 md:py-16 px-4 md:px-16">
+      <div className="max-w-6xl mx-auto space-y-5">
 
+        {/* Section header */}
         <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <div className="tva-label mb-2">&gt;_ NEXTECH INDUSTRIES</div>
           <h2 className="text-3xl md:text-5xl font-bold uppercase tracking-[0.08em] mb-1"
@@ -242,8 +232,66 @@ export function GlobeTracker() {
           viewport={{ once: true }} transition={{ delay: 0.15 }}
           className="grid grid-cols-1 md:grid-cols-[310px_1fr] gap-4 items-start"
         >
-          {/* ── Telemetry panel ── */}
-          <div className="relative rounded-2xl overflow-hidden scanlines flex flex-col"
+          {/* ── Globe canvas — order-1 on mobile so it appears first ── */}
+          <div ref={stageRef} className="relative overflow-hidden rounded-2xl order-1 md:order-2 h-[260px] md:h-[520px]"
+            style={{
+              border: "2px solid rgba(196,82,42,0.3)",
+              background: "radial-gradient(ellipse at center,rgba(196,82,42,0.06) 0%,transparent 70%)",
+              boxShadow: "0 0 22px rgba(196,82,42,0.15), inset 0 0 40px rgba(196,82,42,0.04)",
+            }}>
+            <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+
+            {/* HUD corners — hidden on mobile to avoid clutter */}
+            <div className="absolute top-2 left-2 pointer-events-none hidden md:block"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              Reference · Geocentric
+              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>EQUATORIAL · J2000</div>
+            </div>
+            <div className="absolute top-2 right-2 text-right pointer-events-none"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              <span className="hidden md:inline">Feed · </span>
+              <span style={{ fontSize: 10, color: "rgba(255,212,168,0.6)" }}>{vehicle.hudName}</span>
+            </div>
+            <div className="absolute bottom-8 left-2 pointer-events-none hidden md:block"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              Frame Lock
+              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>STABLE · 0.04 σ</div>
+            </div>
+            <div className="absolute bottom-8 right-2 text-right pointer-events-none hidden md:block"
+              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
+              Status
+              <div className="mt-0.5" style={{ fontSize: 11, color: "#4ADE80", letterSpacing: "0.12em" }}>ORBITAL · LIVE</div>
+            </div>
+
+            {/* Corner brackets */}
+            {(["┌","┐","└","┘"] as const).map((ch, i) => (
+              <span key={i} className="absolute text-sm pointer-events-none select-none"
+                style={{
+                  color: "rgba(196,82,42,0.3)", fontFamily: "'Space Mono',monospace",
+                  top: i < 2 ? 6 : undefined, bottom: i >= 2 ? 6 : undefined,
+                  left: i % 2 === 0 ? 8 : undefined, right: i % 2 === 1 ? 8 : undefined,
+                }}>{ch}</span>
+            ))}
+
+            {/* Orbit legend — bottom of canvas */}
+            <div className="absolute bottom-2 left-4 flex flex-col gap-1 pointer-events-none">
+              {ORBIT_LABELS.map((label, o) => (
+                <button key={o} onClick={() => setActiveOrbit(o)}
+                  className="flex items-center gap-1.5 transition-all pointer-events-auto"
+                  style={{ background: "none", border: "none", cursor: "pointer",
+                    color: o === activeOrbit ? "#C4522A" : "rgba(196,82,42,0.3)",
+                    opacity: o === activeOrbit ? 1 : 0.5 }}>
+                  <div style={{ width: 14, height: 1, background: "currentColor",
+                    boxShadow: o === activeOrbit ? "0 0 6px currentColor" : "none", flexShrink: 0 }} />
+                  <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 8,
+                    letterSpacing: "0.12em", textTransform: "uppercase" }}>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Telemetry panel — order-2 on mobile so it appears below globe ── */}
+          <div className="relative rounded-2xl overflow-hidden scanlines flex flex-col order-2 md:order-1"
             style={{
               background: "#0A0300",
               border: "2px solid #C4522A",
@@ -263,6 +311,7 @@ export function GlobeTracker() {
                   left: i % 2 === 0 ? 8 : undefined, right: i % 2 === 1 ? 8 : undefined,
                 }}>{ch}</span>
             ))}
+
             {/* Header */}
             <div className="relative z-10 flex items-center justify-between px-4 h-9 flex-shrink-0"
               style={{ background: "#C4522A" }}>
@@ -272,15 +321,15 @@ export function GlobeTracker() {
               </span>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full orbit-pulse"
-                  style={{ background: "#0A0300", boxShadow: "0 0 4px #0A0300" }} />
+                  style={{ background: "#0A0300" }} />
                 <span className="text-[9px] tracking-[0.12em] uppercase font-bold"
                   style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace" }}>LIVE</span>
               </div>
             </div>
 
-            {/* Status pill + tabs */}
-            <div className="relative z-10 p-3 pb-0 flex flex-col gap-2">
-              <div className="flex items-center gap-2 py-1.5 px-2 rounded"
+            {/* Status pill */}
+            <div className="relative z-10 px-3 pt-3 pb-0">
+              <div className="flex items-center gap-2 py-1.5 px-2 rounded mb-2"
                 style={{ border: "1px solid rgba(196,82,42,0.25)", background: "rgba(196,82,42,0.05)" }}>
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{ background: "#4ADE80", boxShadow: "0 0 8px #4ADE80", animation: "orbitPulse 2s ease-in-out infinite" }} />
@@ -289,49 +338,55 @@ export function GlobeTracker() {
                   Acquiring telemetry
                 </span>
               </div>
-              {VEHICLES.map((v, i) => (
-                <button key={i} onClick={() => setActiveOrbit(i)}
-                  className="text-left px-3 py-2 rounded transition-all"
-                  style={{
-                    fontFamily: "'Space Mono',monospace", fontSize: 10,
-                    letterSpacing: "0.12em", textTransform: "uppercase",
-                    background:   activeOrbit === i ? "rgba(196,82,42,0.12)" : "transparent",
-                    color:        activeOrbit === i ? "#C4522A" : "rgba(255,212,168,0.3)",
-                    border:       `1px solid ${activeOrbit === i ? "#C4522A" : "rgba(255,212,168,0.1)"}`,
-                    boxShadow:    activeOrbit === i ? "0 0 18px -6px rgba(196,82,42,0.6), inset 0 0 0 1px rgba(196,82,42,0.2)" : "none",
-                    cursor: "pointer",
-                  }}>
-                  {v.name}
-                  {activeOrbit === i && (
-                    <span className="float-right" style={{ fontSize: 6, color: "#C4522A" }}>●</span>
-                  )}
-                </button>
-              ))}
+
+              {/* Vehicle tabs — horizontal row on mobile, vertical on desktop */}
+              <div className="grid grid-cols-3 md:grid-cols-1 gap-1.5">
+                {VEHICLES.map((v, i) => (
+                  <button key={i} onClick={() => setActiveOrbit(i)}
+                    className="text-left px-2 md:px-3 py-2 rounded transition-all"
+                    style={{
+                      fontFamily: "'Space Mono',monospace",
+                      fontSize: 9,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      lineHeight: 1.3,
+                      background:   activeOrbit === i ? "rgba(196,82,42,0.12)" : "transparent",
+                      color:        activeOrbit === i ? "#C4522A" : "rgba(255,212,168,0.3)",
+                      border:       `1px solid ${activeOrbit === i ? "#C4522A" : "rgba(255,212,168,0.1)"}`,
+                      boxShadow:    activeOrbit === i ? "0 0 18px -6px rgba(196,82,42,0.6)" : "none",
+                      cursor: "pointer",
+                    }}>
+                    {v.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Telemetry rows */}
+            {/* Telemetry rows — 2-col grid on mobile to save space */}
             <div className="relative z-10 px-3 pt-3 pb-2 mt-2"
               style={{ borderTop: "1px solid rgba(196,82,42,0.18)", fontFamily: "'Space Mono',monospace" }}>
-              {[
-                { label: "MISSION TIME",  value: fmtMissionTime(telemetry.time) },
-                { label: "ORB. VELOCITY", value: `${telemetry.vel.toLocaleString("en-US")} km/h` },
-                { label: "ALTITUDE",      value: `${telemetry.alt.toLocaleString("en-US")} km` },
-                { label: "INCLINATION",   value: `${telemetry.inc.toFixed(1)}° eq` },
-                { label: "ORBIT PERIOD",  value: `${telemetry.period} min` },
-              ].map((row) => (
-                <div key={row.label} className="flex justify-between items-baseline gap-2 py-2"
-                  style={{ borderBottom: "1px solid rgba(196,82,42,0.1)" }}>
-                  <span className="text-[9px] tracking-[0.18em] uppercase flex-shrink-0"
-                    style={{ color: "rgba(196,82,42,0.65)" }}>{row.label}</span>
-                  <span className="text-[11px] font-bold text-right" style={{ color: "#FFD4A8" }}>
-                    {row.value}
-                  </span>
-                </div>
-              ))}
+              <div className="grid grid-cols-2 md:grid-cols-1 gap-x-3">
+                {[
+                  { label: "MISSION TIME",  value: fmtMissionTime(telemetry.time) },
+                  { label: "ORB. VELOCITY", value: `${telemetry.vel.toLocaleString("en-US")} km/h` },
+                  { label: "ALTITUDE",      value: `${telemetry.alt.toLocaleString("en-US")} km` },
+                  { label: "INCLINATION",   value: `${telemetry.inc.toFixed(1)}° eq` },
+                  { label: "ORBIT PERIOD",  value: `${telemetry.period} min` },
+                ].map((row) => (
+                  <div key={row.label} className="flex flex-col py-1.5 md:py-0"
+                    style={{ borderBottom: "1px solid rgba(196,82,42,0.1)", paddingBottom: 6, marginBottom: 2 }}>
+                    <span className="text-[8px] tracking-[0.16em] uppercase mb-0.5"
+                      style={{ color: "rgba(196,82,42,0.65)" }}>{row.label}</span>
+                    <span className="text-[10px] md:text-[11px] font-bold" style={{ color: "#FFD4A8" }}>
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Meta stamp */}
-            <div className="relative z-10 mx-3 mb-3 mt-2 p-3"
+            {/* Meta stamp — hidden on mobile to save space */}
+            <div className="hidden md:block relative z-10 mx-3 mb-3 mt-2 p-3"
               style={{
                 border: "1px solid rgba(196,82,42,0.2)",
                 background: "repeating-linear-gradient(45deg,transparent 0 8px,rgba(196,82,42,0.02) 8px 9px)",
@@ -343,9 +398,7 @@ export function GlobeTracker() {
                 { label: "WINDOW",        value: vehicle.window },
               ].map((r) => (
                 <div key={r.label} className="flex justify-between gap-2 py-0.5" style={{ fontSize: 9 }}>
-                  <span style={{ color: "rgba(196,82,42,0.6)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                    {r.label}
-                  </span>
+                  <span style={{ color: "rgba(196,82,42,0.6)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{r.label}</span>
                   <span style={{ color: "#E0C4A0" }}>{r.value}</span>
                 </div>
               ))}
@@ -363,71 +416,12 @@ export function GlobeTracker() {
             </div>
 
             {/* Status bar */}
-            <div className="relative z-10 flex items-center justify-between px-4 py-1.5 flex-shrink-0"
+            <div className="relative z-10 flex items-center justify-between px-4 py-1.5 flex-shrink-0 mt-auto"
               style={{ borderTop: "1px solid rgba(196,82,42,0.3)", background: "rgba(0,0,0,0.5)" }}>
               <span className="text-[8px] tracking-[0.1em] uppercase"
                 style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono',monospace" }}>NEXTECH FLEET</span>
               <span className="text-[8px] tracking-[0.1em]"
                 style={{ color: "rgba(196,82,42,0.6)", fontFamily: "'Space Mono',monospace" }}>[ULASB 2026]</span>
-            </div>
-          </div>
-
-          {/* ── Globe canvas ── */}
-          <div ref={stageRef} className="relative overflow-hidden rounded-2xl"
-            style={{
-              height: 520,
-              border: "2px solid rgba(196,82,42,0.3)",
-              background: "radial-gradient(ellipse at center,rgba(196,82,42,0.06) 0%,transparent 70%)",
-              boxShadow: "0 0 22px rgba(196,82,42,0.15), inset 0 0 40px rgba(196,82,42,0.04)",
-            }}>
-            <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
-
-            {/* HUD corners */}
-            <div className="absolute top-3 left-3 pointer-events-none"
-              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
-              Reference · Geocentric
-              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>EQUATORIAL · J2000</div>
-            </div>
-            <div className="absolute top-3 right-3 text-right pointer-events-none"
-              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
-              Feed
-              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>{vehicle.hudName}</div>
-            </div>
-            <div className="absolute bottom-10 left-3 pointer-events-none"
-              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
-              Frame Lock
-              <div className="mt-0.5" style={{ fontSize: 11, color: "rgba(255,212,168,0.55)", letterSpacing: "0.12em" }}>STABLE · 0.04 σ</div>
-            </div>
-            <div className="absolute bottom-10 right-3 text-right pointer-events-none"
-              style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(196,82,42,0.5)" }}>
-              Status
-              <div className="mt-0.5" style={{ fontSize: 11, color: "#4ADE80", letterSpacing: "0.12em" }}>ORBITAL · LIVE</div>
-            </div>
-
-            {/* Corner brackets */}
-            {(["┌","┐","└","┘"] as const).map((ch, i) => (
-              <span key={i} className="absolute text-sm pointer-events-none select-none"
-                style={{
-                  color: "rgba(196,82,42,0.3)", fontFamily: "'Space Mono',monospace",
-                  top: i < 2 ? 6 : undefined, bottom: i >= 2 ? 6 : undefined,
-                  left: i % 2 === 0 ? 8 : undefined, right: i % 2 === 1 ? 8 : undefined,
-                }}>{ch}</span>
-            ))}
-
-            {/* Orbit legend */}
-            <div className="absolute bottom-3 left-6 flex flex-col gap-1.5 pointer-events-none">
-              {ORBIT_LABELS.map((label, o) => (
-                <button key={o} onClick={() => setActiveOrbit(o)}
-                  className="flex items-center gap-2 transition-all pointer-events-auto"
-                  style={{ background: "none", border: "none", cursor: "pointer",
-                    color: o === activeOrbit ? "#C4522A" : "rgba(196,82,42,0.32)",
-                    opacity: o === activeOrbit ? 1 : 0.55 }}>
-                  <div style={{ width: 18, height: 1, background: "currentColor",
-                    boxShadow: o === activeOrbit ? "0 0 6px currentColor" : "none" }} />
-                  <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9,
-                    letterSpacing: "0.14em", textTransform: "uppercase" }}>{label}</span>
-                </button>
-              ))}
             </div>
           </div>
         </motion.div>
