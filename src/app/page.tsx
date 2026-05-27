@@ -40,12 +40,12 @@ export default function Home() {
             <MarcoTeorico />
 
             {/* Sin Déficit */}
-            <RocketSeparator label="Compras Sin Déficit" />
+            <RocketSeparator label="Sin Déficit" />
             <section id="sin-deficit">
               <div className="px-4 md:px-16 pt-10 md:pt-12 pb-4 max-w-5xl mx-auto">
                 <div className="tva-label mb-2">&gt;_ SECCIÓN 01</div>
                 <h2 className="text-3xl md:text-4xl font-bold uppercase tracking-[0.08em]" style={{ color: "#FFFFFF" }}>
-                  Compras Sin Déficit
+                  Modelos Sin Déficit
                 </h2>
                 <div className="h-px w-16 mt-3" style={{ background: "rgba(255,255,255,0.3)" }} />
               </div>
@@ -86,44 +86,49 @@ export default function Home() {
               <ProblemaSection
                 number="2"
                 type="sin-deficit"
-                title="Tornillos Aeroespaciales"
-                planteamiento="NexTech requiere tornillería certificada AS9100 para el ensamblaje de sus cohetes NX-Lite y NX-Heavy. La demanda mensual es de 13,000 unidades. El costo de mantenimiento es de $0.15 por trimestre. El reemplazo es instantáneo y no se permite déficit."
+                title="Cohetes NX-Lite"
+                planteamiento="NexTech Industries fabrica sus cohetes reutilizables NX-Lite en sus propias instalaciones de manufactura aeroespacial. La demanda anual es de 4,800 cohetes, con una tasa de producción de 7,200 cohetes/año. El reemplazo es progresivo y no se permite déficit por la exigencia de continuidad operativa."
                 datos={[
-                  { label: "D — Demanda anual",     value: "156,000 uds/año" },
-                  { label: "C₁ — Costo unitario",   value: "$0.45 / tornillo" },
-                  { label: "C₂ — Costo de ordenar", value: "$320 / pedido" },
-                  { label: "C₃ — Costo almacenar",  value: "$0.60 / ud·año" },
+                  { label: "D — Demanda anual",         value: "4,800 cohetes/año" },
+                  { label: "R — Tasa de producción",    value: "7,200 cohetes/año" },
+                  { label: "C₁ — Costo unitario",       value: "$45,000 / cohete" },
+                  { label: "C₂ — Costo de producción",  value: "$8,500 / corrida" },
+                  { label: "C₃ — Costo de almacenar",   value: "$1,200 / cohete·año" },
                 ]}
                 formulas={[
-                  "Q = √( 2·C₂·D / C₃ )",
-                  "Q = √( 2 × 320 × 156,000 / 0.60 )",
-                  "Q = √166,400,000 ≈ 12,900 tornillos",
+                  "Q = √( 2·C₂·D / (C₃·(1 − D/R)) )",
+                  "Q = √( 2 × 8,500 × 4,800 / (1,200 × (1/3)) )",
+                  "Q = √( 81,600,000 / 400 )  =  √204,000",
+                  "Q ≈ 452 cohetes / corrida",
                   "",
-                  "CT = C₁·D + (C₂·D/Q) + (C₃·Q/2)",
-                  "CT = 70,200 + 3,869.88 + 3,869.88",
-                  "CT = $77,939.77 por año",
+                  "IM = Q × (1 − D/R) = 452 × 1/3 ≈ 151 cohetes",
                   "",
-                  "N = 156,000 / 12,899.61 ≈ 12 pedidos/año",
-                  "t = (1/12.09) × 365 ≈ 30 días",
+                  "CT = C₁·D + (C₂·D/Q) + C₃·Q·(1 − D/R)/2",
+                  "CT = 216,000,000 + 90,335 + 90,330",
+                  "CT ≈ $216,180,665 por año",
+                  "",
+                  "N = D / Q = 4,800 / 452 ≈ 11 corridas/año",
+                  "t = 365 / 10.63 ≈ 34 días entre corridas",
                 ]}
                 results={[
-                  { label: "Cantidad Óptima Q",    value: "12,900 torn/pedido", count: 12900,  suffix: " torn" },
-                  { label: "Costo Total Anual CT", value: "$77,939.77",         count: 77939,  prefix: "$",  suffix: ".77" },
-                  { label: "Pedidos por Año N",    value: "12 pedidos",         count: 12,     suffix: " pedidos" },
-                  { label: "Tiempo entre Pedidos", value: "30 días",            count: 30,     suffix: " días" },
+                  { label: "Cantidad de Producción Q", value: "452 cohetes/corrida",  count: 452,       suffix: " cohetes" },
+                  { label: "Inventario Máximo IM",     value: "151 cohetes",          count: 151,       suffix: " cohetes" },
+                  { label: "Costo Total Anual CT",     value: "$216,180,665",         count: 216180665, prefix: "$" },
+                  { label: "Corridas por Año N",       value: "11 corridas",          count: 11,        suffix: " corridas" },
+                  { label: "Tiempo entre Corridas",    value: "34 días",              count: 34,        suffix: " días" },
                 ]}
-                interpretacion="NexTech debe ordenar 12,900 tornillos cada 30 días, realizando 12 pedidos al año, para abastecer las líneas de ensamblaje de ambos modelos de cohete con un costo anual total de $77,939.77."
-                chartProps={{ Q: 12900, t: 30, N: 12, unit: "uds" }}
+                interpretacion="NexTech debe arrancar 11 corridas de producción al año de 452 cohetes NX-Lite cada una, con un ciclo de 34 días entre corridas. El inventario máximo de 151 cohetes en planta optimiza los costos de almacenamiento, con un costo total anual de $216,180,665."
+                chartProps={{ Q: 452, t: 34, N: 11, unit: "cohetes" }}
               />
             </section>
 
             {/* Con Déficit */}
-            <RocketSeparator label="Compras Con Déficit" flip />
+            <RocketSeparator label="Con Déficit" flip />
             <section id="con-deficit" style={{ background: "rgba(0,0,0,0.08)" }}>
               <div className="px-4 md:px-16 pt-10 md:pt-12 pb-4 max-w-5xl mx-auto">
                 <div className="tva-label mb-2">&gt;_ SECCIÓN 02</div>
                 <h2 className="text-3xl md:text-4xl font-bold uppercase tracking-[0.08em]" style={{ color: "#FFFFFF" }}>
-                  Compras Con Déficit
+                  Modelos Con Déficit
                 </h2>
                 <div className="h-px w-16 mt-3" style={{ background: "rgba(255,255,255,0.3)" }} />
               </div>
@@ -169,39 +174,43 @@ export default function Home() {
               <ProblemaSection
                 number="4"
                 type="con-deficit"
-                title="Paneles Solares Satelitales"
-                planteamiento="NexTech integra paneles solares de arseniuro de galio en los satélites que lanza al espacio. La demanda bimestral es de 6,000 paneles. El costo de almacenamiento es de $2.80/mes (sala limpia clase 10,000) y el costo por déficit es de $95/panel por semestre."
+                title="Motores LRE-7"
+                planteamiento="NexTech Industries fabrica sus motores de propulsión líquida LRE-7 para las etapas inferiores del cohete NX-Heavy. La demanda anual es de 1,200 motores, con tasa de producción de 1,440 motores/año. Se permite déficit moderado con penalización de $1,900/motor·año para optimizar los ciclos de manufactura."
                 datos={[
-                  { label: "D — Demanda anual",     value: "36,000 pan/año" },
-                  { label: "C₁ — Costo unitario",   value: "$185 / panel" },
-                  { label: "C₂ — Costo de ordenar", value: "$4,500 / pedido" },
-                  { label: "C₃ — Costo almacenar",  value: "$33.60 / pan·año" },
-                  { label: "C₄ — Costo déficit",    value: "$190 / pan·año" },
+                  { label: "D — Demanda anual",         value: "1,200 motores/año" },
+                  { label: "R — Tasa de producción",    value: "1,440 motores/año" },
+                  { label: "C₁ — Costo unitario",       value: "$28,000 / motor" },
+                  { label: "C₂ — Costo de producción",  value: "$6,200 / corrida" },
+                  { label: "C₃ — Costo de almacenar",   value: "$850 / motor·año" },
+                  { label: "C₄ — Costo de déficit",     value: "$1,900 / motor·año" },
                 ]}
                 formulas={[
-                  "Q = √(2·C₂·D/C₃) × √((C₃+C₄)/C₄)",
-                  "Q = 3,105.30 × 1.0848 ≈ 3,369 paneles",
+                  "C₃' = C₃ × (1 − D/R) = 850 × (1/6) = 141.67",
                   "",
-                  "S = (C₃/(C₃+C₄)) × Q = (33.60/223.60) × 3,368.70",
-                  "S = 506.21 ≈ 506 paneles agotados/ciclo",
+                  "Q = √(2·C₂·D / C₃') × √((C₃+C₄)/C₄)",
+                  "Q = √(2×6,200×1,200/141.67) × √(2,750/1,900)",
+                  "Q = 324.09 × 1.2031  ≈  390 motores / corrida",
                   "",
-                  "IM = Q − S = 2,862 paneles",
+                  "IM_max = Q×(1−D/R) = 390×(1/6) = 65 mot",
+                  "S = (C₃/(C₃+C₄))×IM_max = (850/2,750)×65 ≈ 20 mot",
+                  "IM = IM_max − S = 65 − 20 = 45 motores",
                   "",
-                  "CT = 6,660,000 + 48,083.55 + 40,847.95 + 7,248.13",
-                  "CT = $6,756,179.62 por año",
+                  "CT = C₁·D + C₂·D/Q + (C₃·IM² + C₄·S²)/(2·IM_max)",
+                  "CT = 33,600,000 + 19,076.92 + 19,086.54",
+                  "CT = $33,638,163.29 por año",
                   "",
-                  "N ≈ 11 pedidos/año  |  t ≈ 34 días",
+                  "N ≈ 3 corridas/año  |  t ≈ 119 días",
                 ]}
                 results={[
-                  { label: "Cantidad Óptima Q",    value: "3,369 pan/pedido", count: 3369,    suffix: " paneles" },
-                  { label: "Unidades Agotadas S",  value: "506 paneles/ciclo",count: 506,     suffix: " paneles" },
-                  { label: "Inventario Máximo IM", value: "2,862 paneles",    count: 2862,    suffix: " paneles" },
-                  { label: "Costo Total Anual CT", value: "$6,756,179.62",    count: 6756179, prefix: "$", suffix: ".62" },
-                  { label: "Pedidos por Año N",    value: "11 pedidos",       count: 11,      suffix: " pedidos" },
-                  { label: "Tiempo entre Pedidos", value: "34 días",          count: 34,      suffix: " días" },
+                  { label: "Cantidad de Producción Q", value: "390 mot/corrida",    count: 390,      suffix: " motores" },
+                  { label: "Unidades Agotadas S",      value: "20 motores/ciclo",   count: 20,       suffix: " motores" },
+                  { label: "Inventario Máximo IM",     value: "45 motores",         count: 45,       suffix: " motores" },
+                  { label: "Costo Total Anual CT",     value: "$33,638,163.29",     count: 33638163, prefix: "$", suffix: ".29" },
+                  { label: "Corridas por Año N",       value: "3 corridas",         count: 3,        suffix: " corridas" },
+                  { label: "Tiempo entre Corridas",    value: "119 días",           count: 119,      suffix: " días" },
                 ]}
-                interpretacion="NexTech ordena 3,369 paneles solares cada 34 días, con un déficit controlado de 506 paneles por ciclo. El inventario máximo en sala limpia es de 2,862 paneles. El costo total anual es $6,756,179.62, optimizando el balance entre costos de almacén y penalizaciones."
-                chartProps={{ Q: 3369, S: 506, t: 34, N: 11, unit: "pan" }}
+                interpretacion="NexTech fabrica 390 motores LRE-7 por corrida cada 119 días, con 3 arranques de producción al año. El déficit controlado de 20 motores por ciclo optimiza el balance entre producción y almacenamiento, con inventario máximo de 45 motores. El costo total anual es $33,638,163.29."
+                chartProps={{ Q: 65, S: 20, t: 119, N: 3, unit: "LRE-7" }}
               />
             </section>
 

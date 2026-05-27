@@ -123,9 +123,13 @@ export function MissionProfile() {
           {/* Header stripe */}
           <div className="relative z-10 flex items-center justify-between px-4 h-9"
             style={{ background: "#C4522A" }}>
-            <span className="text-[10px] tracking-[0.15em] uppercase font-bold"
+            <span className="text-[10px] tracking-[0.15em] uppercase font-bold hidden md:block"
               style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace" }}>
               ████ NEXTECH — PERFIL DE MISIÓN NX-HEAVY // ULASB 2026 ████
+            </span>
+            <span className="text-[10px] tracking-[0.15em] uppercase font-bold md:hidden"
+              style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace" }}>
+              PERFIL DE MISIÓN
             </span>
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#0A0300" }} />
@@ -210,7 +214,7 @@ export function MissionProfile() {
           {/* Phase bar */}
           <div className="relative z-10 border-t"
             style={{ borderTopColor: "rgba(196,82,42,0.2)", background: "#0A0300" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: 4, padding: "16px 20px 6px" }}>
+            <div className="grid grid-cols-4 md:grid-cols-8" style={{ gap: 4, padding: "16px 20px 6px" }}>
               {PHASES.map((label, i) => (
                 <div key={i} style={{
                   fontFamily: "'Space Mono',monospace",

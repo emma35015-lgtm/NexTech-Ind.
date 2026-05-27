@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SinDeficitChart, ConDeficitChart } from "./InventoryChart";
 import { CountUp } from "./AnimatedCounter";
 
-type ModelType = "sin-deficit" | "con-deficit";
+type ModelType = "sin-deficit" | "con-deficit" | "prod-sin-deficit" | "prod-con-deficit";
 type PhaseType = "idle" | "calculating" | "streaming" | "done" | "error";
 
 interface FormValues {
@@ -15,6 +15,7 @@ interface FormValues {
   C2: string;
   C3: string;
   C4: string;
+  R: string;
 }
 
 interface EOQResultSin {
@@ -35,7 +36,26 @@ interface EOQResultCon {
   CT: number;
 }
 
-type EOQResult = EOQResultSin | EOQResultCon;
+interface EOQResultProdSin {
+  type: "prod-sin-deficit";
+  Q: number;
+  IM: number;
+  N: number;
+  t: number;
+  CT: number;
+}
+
+interface EOQResultProdCon {
+  type: "prod-con-deficit";
+  Q: number;
+  S: number;
+  IM: number;
+  N: number;
+  t: number;
+  CT: number;
+}
+
+type EOQResult = EOQResultSin | EOQResultCon | EOQResultProdSin | EOQResultProdCon;
 
 function r2(n: number) { return Math.round(n * 100) / 100; }
 
@@ -56,6 +76,28 @@ function calcConDeficit(D: number, C1: number, C2: number, C3: number, C4: numbe
   const t = 365 / N;
   const CT = C1 * D + (C2 * D) / Q + (C3 * (Q - S) ** 2) / (2 * Q) + (C4 * S ** 2) / (2 * Q);
   return { type: "con-deficit", Q: r2(Q), S: r2(S), IM: r2(IM), N: r2(N), t: r2(t), CT: r2(CT) };
+}
+
+function calcProdSinDeficit(D: number, C1: number, C2: number, C3: number, R: number): EOQResultProdSin {
+  const C3eff = C3 * (1 - D / R);
+  const Q = Math.sqrt((2 * C2 * D) / C3eff);
+  const IM = Q * (1 - D / R);
+  const N = D / Q;
+  const t = 365 / N;
+  const CT = C1 * D + (C2 * D) / Q + (C3eff * Q) / 2;
+  return { type: "prod-sin-deficit", Q: r2(Q), IM: r2(IM), N: r2(N), t: r2(t), CT: r2(CT) };
+}
+
+function calcProdConDeficit(D: number, C1: number, C2: number, C3: number, C4: number, R: number): EOQResultProdCon {
+  const C3eff = C3 * (1 - D / R);
+  const Q = Math.sqrt((2 * C2 * D) / C3eff) * Math.sqrt((C3 + C4) / C4);
+  const IMmax = Q * (1 - D / R);
+  const S = (C3 / (C3 + C4)) * IMmax;
+  const IM = IMmax - S;
+  const N = D / Q;
+  const t = 365 / N;
+  const CT = C1 * D + (C2 * D) / Q + (C3 * IM * IM + C4 * S * S) / (2 * IMmax);
+  return { type: "prod-con-deficit", Q: r2(Q), S: r2(S), IM: r2(IM), N: r2(N), t: r2(t), CT: r2(CT) };
 }
 
 function buildSteps(form: FormValues, model: ModelType, result: EOQResult): string[] {
@@ -99,7 +141,7 @@ function buildSteps(form: FormValues, model: ModelType, result: EOQResult): stri
       `> ================================`,
       `> CÁLCULO COMPLETADO — INICIANDO IA`,
     ];
-  } else {
+  } else if (model === "con-deficit") {
     const C4 = parseFloat(form.C4);
     const res = result as EOQResultCon;
     const Qbase = Math.sqrt((2 * C2 * D) / C3);
@@ -140,6 +182,91 @@ function buildSteps(form: FormValues, model: ModelType, result: EOQResult): stri
       `  t ≈ ${res.t.toFixed(1)} días entre pedidos`,
       ``,
       `> Costo Total Anual:`,
+      `  CT = $${res.CT.toLocaleString()}  ✓`,
+      ``,
+      `> ================================`,
+      `> CÁLCULO COMPLETADO — INICIANDO IA`,
+    ];
+  } else if (model === "prod-sin-deficit") {
+    const R = parseFloat(form.R);
+    const res = result as EOQResultProdSin;
+    const C3eff = C3 * (1 - D / R);
+    const inner = (2 * C2 * D) / C3eff;
+    return [
+      `> Producto: ${form.nombre}`,
+      `> Modelo: PRODUCCIÓN SIN DÉFICIT`,
+      ``,
+      `> Datos ingresados:`,
+      `  D  = ${D.toLocaleString()} uds/año`,
+      `  R  = ${R.toLocaleString()} uds/año (tasa producción)`,
+      `  C₁ = $${C1} / ud`,
+      `  C₂ = $${C2} / corrida`,
+      `  C₃ = $${C3} / ud·año`,
+      ``,
+      `> Costo almacenam. efectivo:`,
+      `  C₃' = C₃ × (1 − D/R) = ${C3} × (1 − ${D}/${R})`,
+      `  C₃' = ${C3eff.toFixed(4)}`,
+      ``,
+      `> Q óptimo de producción:`,
+      `  Q = √( 2·C₂·D / C₃' )`,
+      `  Q = √( 2 × ${C2} × ${D.toLocaleString()} / ${C3eff.toFixed(2)} )`,
+      `  Q = √${inner.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      `  Q = ${res.Q.toLocaleString()} uds/corrida  ✓`,
+      ``,
+      `> Inventario máximo:`,
+      `  IM = Q × (1 − D/R) = ${res.Q} × (1 − ${D}/${R})`,
+      `  IM = ${res.IM.toLocaleString()} uds`,
+      ``,
+      `> Corridas y tiempos:`,
+      `  N ≈ ${res.N.toFixed(2)} corridas/año`,
+      `  t ≈ ${res.t.toFixed(1)} días entre corridas`,
+      ``,
+      `> Costo Total Anual:`,
+      `  CT = C₁·D + C₂·D/Q + C₃·Q·(1−D/R)/2`,
+      `  CT = $${res.CT.toLocaleString()}  ✓`,
+      ``,
+      `> ================================`,
+      `> CÁLCULO COMPLETADO — INICIANDO IA`,
+    ];
+  } else {
+    const C4 = parseFloat(form.C4);
+    const R = parseFloat(form.R);
+    const res = result as EOQResultProdCon;
+    const C3eff = C3 * (1 - D / R);
+    const Qbase = Math.sqrt((2 * C2 * D) / C3eff);
+    const factor = Math.sqrt((C3 + C4) / C4);
+    const IMmax = res.Q * (1 - D / R);
+    return [
+      `> Producto: ${form.nombre}`,
+      `> Modelo: PRODUCCIÓN CON DÉFICIT`,
+      ``,
+      `> Datos ingresados:`,
+      `  D  = ${D.toLocaleString()} uds/año`,
+      `  R  = ${R.toLocaleString()} uds/año (tasa producción)`,
+      `  C₁ = $${C1} / ud`,
+      `  C₂ = $${C2} / corrida`,
+      `  C₃ = $${C3} / ud·año`,
+      `  C₄ = $${C4} / ud·año (déficit)`,
+      ``,
+      `> C₃' = C₃ × (1 − D/R) = ${C3eff.toFixed(2)}`,
+      ``,
+      `> Q base (sin déficit):`,
+      `  Qbase = ${Qbase.toFixed(2)}`,
+      `> Factor déficit: √((C₃+C₄)/C₄) = ${factor.toFixed(4)}`,
+      `  Q = ${Qbase.toFixed(2)} × ${factor.toFixed(4)}`,
+      `  Q = ${res.Q.toLocaleString()} uds/corrida  ✓`,
+      ``,
+      `> Inventario máximo sin déficit:`,
+      `  IM_max = Q × (1−D/R) = ${IMmax.toFixed(2)}`,
+      `  S = (C₃/(C₃+C₄)) × IM_max = ${res.S.toLocaleString()} uds`,
+      `  IM = IM_max − S = ${res.IM.toLocaleString()} uds`,
+      ``,
+      `> Corridas y tiempos:`,
+      `  N ≈ ${res.N.toFixed(2)} corridas/año`,
+      `  t ≈ ${res.t.toFixed(1)} días entre corridas`,
+      ``,
+      `> Costo Total Anual:`,
+      `  CT = C₁·D + C₂·D/Q + (C₃·IM² + C₄·S²)/(2·IM_max)`,
       `  CT = $${res.CT.toLocaleString()}  ✓`,
       ``,
       `> ================================`,
@@ -387,39 +514,44 @@ function WireframeCube() {
 
 function generateReport(form: FormValues, model: ModelType, result: EOQResult, aiText: string) {
   const date = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
-  const modelName = model === "sin-deficit" ? "Sin Déficit (EOQ Clásico)" : "Con Déficit (EOQ con Faltantes)";
+  const MODEL_NAMES: Record<ModelType, string> = {
+    "sin-deficit": "Compras Sin Déficit (EOQ Clásico)",
+    "con-deficit": "Compras Con Déficit (EOQ con Faltantes)",
+    "prod-sin-deficit": "Producción Sin Déficit",
+    "prod-con-deficit": "Producción Con Déficit",
+  };
+  const modelName = MODEL_NAMES[model];
   const div = "=".repeat(50);
+  const isProduction = model === "prod-sin-deficit" || model === "prod-con-deficit";
+  const hasDeficit = model === "con-deficit" || model === "prod-con-deficit";
+  const orderLabel = isProduction ? "corrida" : "pedido";
 
-  const params = model === "sin-deficit"
-    ? [
-        `D  — Demanda anual:     ${parseFloat(form.D).toLocaleString()} uds/año`,
-        `C1 — Costo unitario:   $${form.C1} / ud`,
-        `C2 — Costo de ordenar: $${form.C2} / pedido`,
-        `C3 — Costo almacenar:  $${form.C3} / ud·año`,
-      ].join("\n")
-    : [
-        `D  — Demanda anual:     ${parseFloat(form.D).toLocaleString()} uds/año`,
-        `C1 — Costo unitario:   $${form.C1} / ud`,
-        `C2 — Costo de ordenar: $${form.C2} / pedido`,
-        `C3 — Costo almacenar:  $${form.C3} / ud·año`,
-        `C4 — Costo déficit:    $${form.C4} / ud·año`,
-      ].join("\n");
+  const baseParams = [
+    `D  — Demanda anual:     ${parseFloat(form.D).toLocaleString()} uds/año`,
+    ...(isProduction ? [`R  — Tasa produccion:   ${parseFloat(form.R).toLocaleString()} uds/año`] : []),
+    `C1 — Costo unitario:   $${form.C1} / ud`,
+    `C2 — Costo de ${isProduction ? "producir" : "ordenar"}: $${form.C2} / ${orderLabel}`,
+    `C3 — Costo almacenar:  $${form.C3} / ud·año`,
+    ...(hasDeficit ? [`C4 — Costo deficit:    $${form.C4} / ud·año`] : []),
+  ];
+  const params = baseParams.join("\n");
 
-  const results = result.type === "sin-deficit"
-    ? [
-        `Cantidad optima Q:      ${Math.round(result.Q).toLocaleString()} uds/pedido`,
-        `Pedidos por año N:      ${Math.round(result.N)} pedidos`,
-        `Tiempo entre pedidos:   ${Math.round(result.t)} días`,
-        `Costo Total Anual CT:   $${result.CT.toLocaleString()}`,
-      ].join("\n")
-    : [
-        `Cantidad optima Q:      ${Math.round(result.Q).toLocaleString()} uds/pedido`,
-        `Unidades agotadas S:    ${Math.round((result as EOQResultCon).S).toLocaleString()} uds/ciclo`,
-        `Inventario maximo IM:   ${Math.round((result as EOQResultCon).IM).toLocaleString()} uds`,
-        `Pedidos por año N:      ${Math.round(result.N)} pedidos`,
-        `Tiempo entre pedidos:   ${Math.round(result.t)} días`,
-        `Costo Total Anual CT:   $${result.CT.toLocaleString()}`,
-      ].join("\n");
+  const baseResults: string[] = [
+    `Cantidad optima Q:      ${Math.round(result.Q).toLocaleString()} uds/${orderLabel}`,
+    ...(hasDeficit ? [
+      `Unidades agotadas S:    ${Math.round((result as EOQResultCon | EOQResultProdCon).S).toLocaleString()} uds/ciclo`,
+    ] : []),
+    ...((result.type === "prod-sin-deficit" || result.type === "prod-con-deficit") ? [
+      `Inventario maximo IM:   ${Math.round((result as EOQResultProdSin | EOQResultProdCon).IM).toLocaleString()} uds`,
+    ] : []),
+    ...(result.type === "con-deficit" ? [
+      `Inventario maximo IM:   ${Math.round((result as EOQResultCon).IM).toLocaleString()} uds`,
+    ] : []),
+    `${isProduction ? "Corridas" : "Pedidos"} por año N:  ${Math.round(result.N)} ${orderLabel}s`,
+    `Tiempo entre ${orderLabel}s:  ${Math.round(result.t)} días`,
+    `Costo Total Anual CT:   $${result.CT.toLocaleString()}`,
+  ];
+  const results = baseResults.join("\n");
 
   const body = [
     div,
@@ -480,9 +612,20 @@ const EXAMPLE: FormValues = {
   C2: "1500",
   C3: "48",
   C4: "",
+  R: "",
 };
 
-const EMPTY: FormValues = { nombre: "", D: "", C1: "", C2: "", C3: "", C4: "" };
+const EXAMPLE_PROD: FormValues = {
+  nombre: "Cohetes NX-Lite",
+  D: "4800",
+  C1: "45000",
+  C2: "8500",
+  C3: "1200",
+  C4: "",
+  R: "7200",
+};
+
+const EMPTY: FormValues = { nombre: "", D: "", C1: "", C2: "", C3: "", C4: "", R: "" };
 
 function fmtTime(s: number) {
   const h = Math.floor(s / 3600);
@@ -540,6 +683,11 @@ export function AIAdvisor() {
     setForm({ ...EXAMPLE });
   }
 
+  function loadExampleProd() {
+    setModel("prod-sin-deficit");
+    setForm({ ...EXAMPLE_PROD });
+  }
+
   function setField(key: keyof FormValues, val: string) {
     setForm((f) => ({ ...f, [key]: val }));
   }
@@ -551,13 +699,24 @@ export function AIAdvisor() {
     const C2 = parseFloat(form.C2);
     const C3 = parseFloat(form.C3);
     const C4 = parseFloat(form.C4);
+    const R = parseFloat(form.R);
+    const isProduction = model === "prod-sin-deficit" || model === "prod-con-deficit";
+    const hasDeficit = model === "con-deficit" || model === "prod-con-deficit";
 
     if (!form.nombre || isNaN(D) || isNaN(C1) || isNaN(C2) || isNaN(C3)) {
       setErrorMsg("ERR: Completa todos los campos requeridos");
       return;
     }
-    if (model === "con-deficit" && (isNaN(C4) || C4 <= 0)) {
+    if (hasDeficit && (isNaN(C4) || C4 <= 0)) {
       setErrorMsg("ERR: C₄ (costo déficit) es requerido y debe ser positivo");
+      return;
+    }
+    if (isProduction && (isNaN(R) || R <= 0)) {
+      setErrorMsg("ERR: R (tasa de producción) es requerida y debe ser positiva");
+      return;
+    }
+    if (isProduction && R <= D) {
+      setErrorMsg("ERR: R debe ser mayor que D (la tasa de producción debe superar la demanda)");
       return;
     }
     if (D <= 0 || C1 <= 0 || C2 <= 0 || C3 <= 0) {
@@ -573,9 +732,11 @@ export function AIAdvisor() {
     setVisibleLines(0);
     setElapsed(0);
 
-    const res = model === "sin-deficit"
-      ? calcSinDeficit(D, C1, C2, C3)
-      : calcConDeficit(D, C1, C2, C3, C4);
+    let res: EOQResult;
+    if (model === "sin-deficit") res = calcSinDeficit(D, C1, C2, C3);
+    else if (model === "con-deficit") res = calcConDeficit(D, C1, C2, C3, C4);
+    else if (model === "prod-sin-deficit") res = calcProdSinDeficit(D, C1, C2, C3, R);
+    else res = calcProdConDeficit(D, C1, C2, C3, C4, R);
 
     const steps = buildSteps(form, model, res);
     setStepsLines(steps);
@@ -589,9 +750,17 @@ export function AIAdvisor() {
     setPhase("streaming");
     setTimeout(() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
-    const prompt = model === "sin-deficit"
-      ? `Producto: ${form.nombre}. Modelo EOQ Sin Déficit. Q=${(res as EOQResultSin).Q}, N=${(res as EOQResultSin).N.toFixed(1)} pedidos/año, t=${(res as EOQResultSin).t.toFixed(1)} días, CT=$${(res as EOQResultSin).CT.toLocaleString()}. D=${D}, C₁=${C1}, C₂=${C2}, C₃=${C3}.`
-      : `Producto: ${form.nombre}. Modelo EOQ Con Déficit. Q=${(res as EOQResultCon).Q}, S=${(res as EOQResultCon).S} uds agotadas/ciclo, IM=${(res as EOQResultCon).IM}, N=${(res as EOQResultCon).N.toFixed(1)} pedidos/año, t=${(res as EOQResultCon).t.toFixed(1)} días, CT=$${(res as EOQResultCon).CT.toLocaleString()}. D=${D}, C₁=${C1}, C₂=${C2}, C₃=${C3}, C₄=${C4}.`;
+    const orderLabel = isProduction ? "corridas" : "pedidos";
+    let prompt = "";
+    if (res.type === "sin-deficit") {
+      prompt = `Producto: ${form.nombre}. Modelo Compras Sin Déficit (EOQ). Q=${res.Q}, N=${res.N.toFixed(1)} ${orderLabel}/año, t=${res.t.toFixed(1)} días, CT=$${res.CT.toLocaleString()}. D=${D}, C₁=${C1}, C₂=${C2}, C₃=${C3}.`;
+    } else if (res.type === "con-deficit") {
+      prompt = `Producto: ${form.nombre}. Modelo Compras Con Déficit. Q=${res.Q}, S=${res.S} agotadas/ciclo, IM=${res.IM}, N=${res.N.toFixed(1)} ${orderLabel}/año, t=${res.t.toFixed(1)} días, CT=$${res.CT.toLocaleString()}.`;
+    } else if (res.type === "prod-sin-deficit") {
+      prompt = `Producto: ${form.nombre}. Modelo Producción Sin Déficit. Q=${res.Q} uds/corrida, IM_max=${res.IM}, N=${res.N.toFixed(1)} corridas/año, t=${res.t.toFixed(1)} días, CT=$${res.CT.toLocaleString()}. D=${D}, R=${R}, C₁=${C1}, C₂=${C2}, C₃=${C3}.`;
+    } else {
+      prompt = `Producto: ${form.nombre}. Modelo Producción Con Déficit. Q=${res.Q} uds/corrida, S=${res.S} agotadas/ciclo, IM=${res.IM}, N=${res.N.toFixed(1)} corridas/año, t=${res.t.toFixed(1)} días, CT=$${res.CT.toLocaleString()}. D=${D}, R=${R}, C₁=${C1}, C₂=${C2}, C₃=${C3}, C₄=${C4}.`;
+    }
 
     try {
       for await (const chunk of streamGemini(apiKey, prompt)) {
@@ -859,21 +1028,38 @@ export function AIAdvisor() {
                   </div>
                 ))}
               </div>
-              <button
-                onClick={loadExample}
-                className="w-full text-[10px] tracking-[0.18em] uppercase py-2.5 transition-all"
-                style={{
-                  border: "1px solid rgba(196,82,42,0.6)",
-                  color: "#FFD4A8",
-                  background: "rgba(196,82,42,0.12)",
-                  cursor: "pointer",
-                  fontFamily: "'Space Mono', monospace",
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.3)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.12)"; }}
-              >
-                [ CARGAR EJEMPLO — TITANIO P1 ]
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={loadExample}
+                  className="flex-1 text-[10px] tracking-[0.18em] uppercase py-2.5 transition-all"
+                  style={{
+                    border: "1px solid rgba(196,82,42,0.6)",
+                    color: "#FFD4A8",
+                    background: "rgba(196,82,42,0.12)",
+                    cursor: "pointer",
+                    fontFamily: "'Space Mono', monospace",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.3)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.12)"; }}
+                >
+                  [ TITANIO P1 ]
+                </button>
+                <button
+                  onClick={loadExampleProd}
+                  className="flex-1 text-[10px] tracking-[0.18em] uppercase py-2.5 transition-all"
+                  style={{
+                    border: "1px solid rgba(196,82,42,0.6)",
+                    color: "#FFD4A8",
+                    background: "rgba(196,82,42,0.12)",
+                    cursor: "pointer",
+                    fontFamily: "'Space Mono', monospace",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.3)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,82,42,0.12)"; }}
+                >
+                  [ NX-LITE P2 ]
+                </button>
+              </div>
             </div>
           </div>
 
@@ -976,12 +1162,17 @@ export function AIAdvisor() {
                 {/* Model selector */}
                 <div className="space-y-2">
                   <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ MODELO DE INVENTARIO:</div>
-                  <div className="flex gap-2 flex-wrap">
-                    {(["sin-deficit", "con-deficit"] as ModelType[]).map((m) => (
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      ["sin-deficit", "Compras · Sin Déficit"],
+                      ["con-deficit", "Compras · Con Déficit"],
+                      ["prod-sin-deficit", "Producción · Sin Déficit"],
+                      ["prod-con-deficit", "Producción · Con Déficit"],
+                    ] as [ModelType, string][]).map(([m, label]) => (
                       <button
                         key={m}
                         onClick={() => setModel(m)}
-                        className="text-[11px] tracking-[0.12em] uppercase px-4 py-2 font-bold transition-all"
+                        className="text-[10px] tracking-[0.1em] uppercase px-3 py-2 font-bold transition-all text-left"
                         style={{
                           background: model === m ? "#C4522A" : "rgba(196,82,42,0.1)",
                           color: model === m ? "#0A0300" : "rgba(255,212,168,0.5)",
@@ -989,7 +1180,7 @@ export function AIAdvisor() {
                           cursor: "pointer",
                         }}
                       >
-                        {model === m ? "▶ " : "  "}{m === "sin-deficit" ? "Sin Déficit" : "Con Déficit"}
+                        {model === m ? "▶ " : ""}{label}
                       </button>
                     ))}
                   </div>
@@ -1018,10 +1209,10 @@ export function AIAdvisor() {
                   <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ PARÁMETROS ECONÓMICOS:</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                     {[
-                      { key: "D",  label: "D  — Demanda Anual",        unit: "uds/año",    placeholder: "2400",  type: "number" },
-                      { key: "C1", label: "C₁ — Costo Unitario",       unit: "$/ud",       placeholder: "850",   type: "number" },
-                      { key: "C2", label: "C₂ — Costo de Ordenar",     unit: "$/pedido",   placeholder: "1500",  type: "number" },
-                      { key: "C3", label: "C₃ — Costo de Almacenar",   unit: "$/ud·año",   placeholder: "48",    type: "number" },
+                      { key: "D",  label: "D  — Demanda Anual",      unit: "uds/año",  placeholder: "2400", type: "number" },
+                      { key: "C1", label: "C₁ — Costo Unitario",     unit: "$/ud",     placeholder: "850",  type: "number" },
+                      { key: "C2", label: "C₂ — Costo de Ordenar/Producir", unit: "$/ciclo", placeholder: "1500", type: "number" },
+                      { key: "C3", label: "C₃ — Costo de Almacenar", unit: "$/ud·año", placeholder: "48",   type: "number" },
                     ].map(({ key, label, unit, placeholder, type }) => (
                       <div key={key} className="space-y-1">
                         <div className="flex items-center justify-between">
@@ -1042,7 +1233,7 @@ export function AIAdvisor() {
                     ))}
 
                     <AnimatePresence>
-                      {model === "con-deficit" && (
+                      {(model === "con-deficit" || model === "prod-con-deficit") && (
                         <motion.div
                           key="c4"
                           initial={{ opacity: 0, height: 0 }}
@@ -1063,6 +1254,34 @@ export function AIAdvisor() {
                               placeholder="80"
                               value={form.C4}
                               onChange={(e) => setField("C4", e.target.value)}
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                      {(model === "prod-sin-deficit" || model === "prod-con-deficit") && (
+                        <motion.div
+                          key="rfield"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          style={{ overflow: "hidden" }}
+                          className="space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] tracking-[0.1em]" style={{ color: "rgba(255,212,168,0.5)" }}>R  — Tasa de Producción</span>
+                            <span className="text-[9px]" style={{ color: "rgba(196,82,42,0.6)" }}>uds/año</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs flex-shrink-0" style={{ color: "#C4522A" }}>&gt;&gt;</span>
+                            <input
+                              type="number"
+                              className="terminal-input flex-1"
+                              placeholder="7200"
+                              value={form.R}
+                              onChange={(e) => setField("R", e.target.value)}
                             />
                           </div>
                         </motion.div>
@@ -1306,9 +1525,9 @@ export function AIAdvisor() {
                       className="grid md:grid-cols-2 gap-6"
                     >
                       <div>
-                        {result.type === "sin-deficit" ? (
+                        {(result.type === "sin-deficit" || result.type === "prod-sin-deficit") ? (
                           <SinDeficitChart
-                            Q={result.Q}
+                            Q={result.type === "prod-sin-deficit" ? result.IM : result.Q}
                             t={result.t}
                             N={result.N}
                             unit="uds"
@@ -1316,7 +1535,7 @@ export function AIAdvisor() {
                           />
                         ) : (
                           <ConDeficitChart
-                            Q={result.Q}
+                            Q={result.type === "prod-con-deficit" ? result.IM + result.S : result.Q}
                             S={result.S}
                             t={result.t}
                             N={result.N}
@@ -1349,12 +1568,29 @@ export function AIAdvisor() {
                               { label: "t entre pedidos", val: Math.round(result.t),  prefix: "",  suffix: " días" },
                               { label: "CT Anual",        val: Math.round(result.CT), prefix: "$", suffix: "" },
                             ]
-                          : [
+                          : result.type === "con-deficit"
+                          ? [
                               { label: "Q Óptimo",         val: Math.round(result.Q),   prefix: "",  suffix: " uds" },
                               { label: "S Agotadas/ciclo", val: Math.round(result.S),   prefix: "",  suffix: " uds" },
                               { label: "IM Máximo",        val: Math.round(result.IM),  prefix: "",  suffix: " uds" },
                               { label: "N Pedidos/año",    val: Math.round(result.N),   prefix: "",  suffix: " ped" },
                               { label: "t entre pedidos",  val: Math.round(result.t),   prefix: "",  suffix: " días" },
+                              { label: "CT Anual",         val: Math.round(result.CT),  prefix: "$", suffix: "" },
+                            ]
+                          : result.type === "prod-sin-deficit"
+                          ? [
+                              { label: "Q Corrida",        val: Math.round(result.Q),   prefix: "",  suffix: " uds" },
+                              { label: "IM Máximo",        val: Math.round(result.IM),  prefix: "",  suffix: " uds" },
+                              { label: "N Corridas/año",   val: Math.round(result.N),   prefix: "",  suffix: " cor" },
+                              { label: "t entre corridas", val: Math.round(result.t),   prefix: "",  suffix: " días" },
+                              { label: "CT Anual",         val: Math.round(result.CT),  prefix: "$", suffix: "" },
+                            ]
+                          : [
+                              { label: "Q Corrida",        val: Math.round(result.Q),   prefix: "",  suffix: " uds" },
+                              { label: "S Agotadas/ciclo", val: Math.round(result.S),   prefix: "",  suffix: " uds" },
+                              { label: "IM Máximo",        val: Math.round(result.IM),  prefix: "",  suffix: " uds" },
+                              { label: "N Corridas/año",   val: Math.round(result.N),   prefix: "",  suffix: " cor" },
+                              { label: "t entre corridas", val: Math.round(result.t),   prefix: "",  suffix: " días" },
                               { label: "CT Anual",         val: Math.round(result.CT),  prefix: "$", suffix: "" },
                             ]
                         ).map((row, i, arr) => (
