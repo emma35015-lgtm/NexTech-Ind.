@@ -53,6 +53,7 @@ export default function Home() {
               <ProblemaSection
                 number="1"
                 type="sin-deficit"
+                typeLabel="Modelo de Compra · Sin Déficit"
                 title="Aleaciones de Titanio"
                 planteamiento="NexTech Industries utiliza aleaciones de titanio aeroespacial para la fabricación de los fuselajes de sus cohetes NX-Heavy. La demanda anual estimada es de 2,400 toneladas. El reemplazo es instantáneo y no se permite déficit por razones de continuidad operativa."
                 datos={[
@@ -86,6 +87,7 @@ export default function Home() {
               <ProblemaSection
                 number="2"
                 type="sin-deficit"
+                typeLabel="Modelo de Producción · Sin Déficit"
                 title="Cohetes NX-Lite"
                 planteamiento="NexTech Industries fabrica sus cohetes reutilizables NX-Lite en sus propias instalaciones de manufactura aeroespacial. La demanda anual es de 4,800 cohetes, con una tasa de producción de 7,200 cohetes/año. El reemplazo es progresivo y no se permite déficit por la exigencia de continuidad operativa."
                 datos={[
@@ -136,6 +138,7 @@ export default function Home() {
               <ProblemaSection
                 number="3"
                 type="con-deficit"
+                typeLabel="Modelo de Compra · Con Déficit"
                 title="Combustible Criogénico LH₂"
                 planteamiento="NexTech almacena tanques de hidrógeno líquido (LH₂) para abastecer sus misiones. La demanda anual es de 18,000 tanques. El costo por déficit es de $80/tanque·año (penalización por retrasar un lanzamiento). Se permite déficit moderado."
                 datos={[
@@ -174,6 +177,7 @@ export default function Home() {
               <ProblemaSection
                 number="4"
                 type="con-deficit"
+                typeLabel="Modelo de Producción · Con Déficit"
                 title="Motores LRE-7"
                 planteamiento="NexTech Industries fabrica sus motores de propulsión líquida LRE-7 para las etapas inferiores del cohete NX-Heavy. La demanda anual es de 1,200 motores, con tasa de producción de 1,440 motores/año. Se permite déficit moderado con penalización de $1,900/motor·año para optimizar los ciclos de manufactura."
                 datos={[

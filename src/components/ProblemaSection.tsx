@@ -17,6 +17,7 @@ interface ResultRow {
 interface ProblemaBaseProps {
   number: string;
   type: "sin-deficit" | "con-deficit";
+  typeLabel?: string;
   title: string;
   planteamiento: string;
   datos: { label: string; value: string }[];
@@ -44,6 +45,7 @@ const fadeUp = {
 export function ProblemaSection({
   number,
   type,
+  typeLabel,
   title,
   planteamiento,
   datos,
@@ -53,6 +55,7 @@ export function ProblemaSection({
   chartProps,
 }: ProblemaBaseProps) {
   const isDeficit = type === "con-deficit";
+  const badgeText = typeLabel ?? (isDeficit ? "Con Déficit" : "Sin Déficit");
 
   return (
     <motion.div
@@ -74,7 +77,7 @@ export function ProblemaSection({
                 color: isDeficit ? "#FFB490" : "rgba(255,255,255,0.85)",
               }}
             >
-              {isDeficit ? "Con Déficit" : "Sin Déficit"}
+              {badgeText}
             </span>
             <span className="tva-label">&gt;_ Problema {number}</span>
           </motion.div>
