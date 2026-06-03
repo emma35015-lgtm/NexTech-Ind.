@@ -3,7 +3,25 @@
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
 import { ParticleBackground } from "./ParticleBackground";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, X, ExternalLink } from "lucide-react";
+
+/* ─── External tools ─────────────────────────────────────────── */
+const TOOLS = [
+  {
+    id: "vogel",
+    category: "Calculadora",
+    name: "Vogel",
+    subtitle: "Método de Transporte",
+    url: "https://emma35015-lgtm.github.io/Vogel-Calculadora-/",
+  },
+  {
+    id: "game",
+    category: "Arcade",
+    name: "NexTech Game",
+    subtitle: "Versión 2.0",
+    url: "https://emma35015-lgtm.github.io/Game-2.0/",
+  },
+];
 
 /* ─── Stars ──────────────────────────────────────────────────── */
 const STARS = Array.from({ length: 40 }, (_, i) => ({
@@ -97,6 +115,8 @@ export function HeroSection() {
   const rotY = useMotionValue(0);
   const springX = useSpring(rotX, { stiffness: 80, damping: 18 });
   const springY = useSpring(rotY, { stiffness: 80, damping: 18 });
+  const [activeTool, setActiveTool] = useState<string | null>(null);
+  const activeToolData = TOOLS.find((t) => t.id === activeTool);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
@@ -256,7 +276,7 @@ export function HeroSection() {
             className="text-sm md:text-base tracking-[0.1em]"
             style={{ color: "rgba(255,255,255,0.7)" }}
           >
-            Compras Sin Déficit &nbsp;/&nbsp; Compras Con Déficit
+            Compra · Producción · Sin Déficit · Con Déficit
           </p>
         </motion.div>
 
@@ -283,6 +303,58 @@ export function HeroSection() {
             >
               {tag}
             </span>
+          ))}
+        </motion.div>
+
+        {/* External tools */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          className="flex flex-wrap justify-center gap-3 w-full max-w-lg"
+        >
+          {TOOLS.map((tool, idx) => (
+            <button
+              key={tool.id}
+              onClick={() => setActiveTool(tool.id)}
+              className="relative flex-1 min-w-[140px] flex flex-col items-start gap-1 px-4 py-3 text-left transition-all group"
+              style={{
+                background: "rgba(10,3,0,0.7)",
+                border: "1px solid rgba(196,82,42,0.55)",
+                backdropFilter: "blur(8px)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#C4522A";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 16px rgba(196,82,42,0.45)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(196,82,42,0.55)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+              }}
+            >
+              {/* corner bracket */}
+              <span className="absolute top-1.5 right-2 text-xs pointer-events-none select-none"
+                style={{ color: "rgba(196,82,42,0.45)", fontFamily: "'Space Mono',monospace" }}>┐</span>
+              <span className="text-[9px] tracking-[0.2em] uppercase"
+                style={{ color: "#C4522A", fontFamily: "'Space Mono',monospace" }}>
+                &gt;_ {tool.category}
+              </span>
+              <span className="text-base font-bold uppercase tracking-[0.1em]"
+                style={{ color: "#FFF0DC", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.12em" }}>
+                {tool.name}
+              </span>
+              <span className="text-[10px] tracking-[0.08em]"
+                style={{ color: "rgba(255,212,168,0.5)", fontFamily: "'Space Mono',monospace" }}>
+                {tool.subtitle}
+              </span>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[9px] tracking-[0.18em] uppercase font-bold"
+                  style={{ color: "#C4522A", fontFamily: "'Space Mono',monospace" }}>
+                  ABRIR
+                </span>
+                <ExternalLink size={9} style={{ color: "#C4522A" }} />
+              </div>
+            </button>
           ))}
         </motion.div>
 
@@ -323,6 +395,59 @@ export function HeroSection() {
       </motion.div>
 
       <div className="section-divider absolute bottom-0 left-0 right-0" />
+
+      {/* Tool modal overlay */}
+      {activeTool && activeToolData && (
+        <div className="fixed inset-0 flex flex-col" style={{ zIndex: 300, background: "rgba(5,1,0,0.97)" }}>
+          {/* Header bar */}
+          <div className="flex items-center justify-between px-4 h-11 flex-shrink-0"
+            style={{ background: "#C4522A" }}>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] tracking-[0.2em] uppercase font-bold"
+                style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace" }}>
+                ████ NEXTECH — {activeToolData.category.toUpperCase()} · {activeToolData.name.toUpperCase()} ████
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <a
+                href={activeToolData.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[10px] tracking-[0.15em] uppercase font-bold px-2 py-1"
+                style={{ color: "#0A0300", fontFamily: "'Space Mono',monospace",
+                  border: "1px solid rgba(10,3,0,0.3)", background: "rgba(10,3,0,0.15)" }}
+              >
+                <ExternalLink size={10} />
+                <span>Nueva pestaña</span>
+              </a>
+              <button
+                onClick={() => setActiveTool(null)}
+                className="flex items-center justify-center w-7 h-7 transition-all"
+                style={{ background: "rgba(10,3,0,0.25)", border: "1px solid rgba(10,3,0,0.3)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(10,3,0,0.5)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(10,3,0,0.25)"; }}
+              >
+                <X size={14} style={{ color: "#0A0300" }} />
+              </button>
+            </div>
+          </div>
+          {/* iframe */}
+          <iframe
+            src={activeToolData.url}
+            className="flex-1 w-full border-none"
+            title={activeToolData.name}
+            allow="fullscreen"
+          />
+          {/* Status bar */}
+          <div className="flex items-center px-4 h-7 flex-shrink-0"
+            style={{ background: "#0A0300", borderTop: "1px solid rgba(196,82,42,0.3)" }}>
+            <span className="text-[8px] tracking-[0.15em] uppercase"
+              style={{ color: "rgba(196,82,42,0.5)", fontFamily: "'Space Mono',monospace" }}>
+              NEXTECH INDUSTRIES — {activeToolData.url} — [STATUS: ACTIVE]
+            </span>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
