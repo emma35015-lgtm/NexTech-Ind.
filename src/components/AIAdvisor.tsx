@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SinDeficitChart, ConDeficitChart } from "./InventoryChart";
 import { CountUp } from "./AnimatedCounter";
 
-type ModelType = "sin-deficit" | "con-deficit" | "prod-sin-deficit" | "prod-con-deficit";
+type ModelType = "sin-deficit" | "con-deficit" | "prod-sin-deficit" | "prod-con-deficit" | "transporte";
 type PhaseType = "idle" | "calculating" | "streaming" | "done" | "error";
 
 interface FormValues {
@@ -55,7 +55,14 @@ interface EOQResultProdCon {
   CT: number;
 }
 
-type EOQResult = EOQResultSin | EOQResultCon | EOQResultProdSin | EOQResultProdCon;
+interface TransporteResult {
+  type: "transporte";
+  enoTotal: number;
+  costoMinTotal: number;
+  vogelTotal: number;
+}
+
+type EOQResult = EOQResultSin | EOQResultCon | EOQResultProdSin | EOQResultProdCon | TransporteResult;
 
 function r2(n: number) { return Math.round(n * 100) / 100; }
 
@@ -228,6 +235,47 @@ function buildSteps(form: FormValues, model: ModelType, result: EOQResult): stri
       `> ================================`,
       `> CÁLCULO COMPLETADO — INICIANDO IA`,
     ];
+  } else if (model === "transporte") {
+    return [
+      `> Problema: Distribución de Motores LRE-7`,
+      `> Modelo: TRANSPORTE (3 Plantas × 4 Sitios)`,
+      ``,
+      `> Orígenes y oferta (mot/mes):`,
+      `  León             = 50`,
+      `  Cabo Cañaveral   = 70`,
+      `  Kourou           = 80`,
+      `  Total oferta     = 200 (balanceado)`,
+      ``,
+      `> Destinos y demanda (mot/mes):`,
+      `  Vandenberg       = 60`,
+      `  Mar Pacífico     = 50`,
+      `  Wallops          = 40`,
+      `  Mahia            = 50`,
+      `  Total demanda    = 200`,
+      ``,
+      `> Método ENO (Esquina Noroeste):`,
+      `  León→Vdbg(50·$12) + Cabo→Vdbg(10·$8)`,
+      `  + Cabo→MarP(50·$14) + Cabo→Wall(10·$12)`,
+      `  + Kourou→Wall(30·$14) + Kourou→Mahia(50·$10)`,
+      `  COSTO ENO = $2,420k  ✗`,
+      ``,
+      `> Método Costo Mínimo:`,
+      `  Cabo→Vdbg(60·$8) + León→MarP(50·$10)`,
+      `  + Kourou→Mahia(50·$10) + Cabo→Wall(10·$12)`,
+      `  + Kourou→Wall(30·$14)`,
+      `  COSTO MÍNIMO = $2,020k  ✓`,
+      ``,
+      `> Método Vogel (VAM):`,
+      `  Misma asignación final que Costo Mínimo`,
+      `  (mayor penalización guía a la misma solución)`,
+      `  COSTO VOGEL = $2,020k  ✓`,
+      ``,
+      `> Ahorro Costo Mín / Vogel vs ENO:`,
+      `  $2,420k − $2,020k = $400k/mes de ahorro`,
+      ``,
+      `> ================================`,
+      `> CÁLCULO COMPLETADO — INICIANDO IA`,
+    ];
   } else {
     const C4 = parseFloat(form.C4);
     const R = parseFloat(form.R);
@@ -283,7 +331,7 @@ async function* streamGemini(apiKey: string, prompt: string) {
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       systemInstruction: {
-        parts: [{ text: "Eres el asesor de inventario de NexTech Industries. Interpreta los resultados EOQ en español. Máximo 120 palabras. Sin saludos. Incluye: Q óptimo, implicaciones de CT, y 1-2 recomendaciones ejecutivas." }],
+        parts: [{ text: "Eres el asesor de operaciones de NexTech Industries. Interpreta resultados de inventario EOQ o de transporte en español. Máximo 120 palabras. Sin saludos. Para EOQ: incluye Q óptimo, implicaciones del CT y 1-2 recomendaciones ejecutivas. Para transporte: compara los métodos, destaca el ahorro logrado y recomienda el mejor método con justificación técnica breve." }],
       },
       generationConfig: { maxOutputTokens: 300 },
     }),
@@ -519,12 +567,50 @@ function generateReport(form: FormValues, model: ModelType, result: EOQResult, a
     "con-deficit": "Compras Con Déficit (EOQ con Faltantes)",
     "prod-sin-deficit": "Producción Sin Déficit",
     "prod-con-deficit": "Producción Con Déficit",
+    "transporte": "Transporte (ENO · Costo Mínimo · Vogel)",
   };
   const modelName = MODEL_NAMES[model];
   const div = "=".repeat(50);
+  const isTransporte = model === "transporte";
   const isProduction = model === "prod-sin-deficit" || model === "prod-con-deficit";
   const hasDeficit = model === "con-deficit" || model === "prod-con-deficit";
   const orderLabel = isProduction ? "corrida" : "pedido";
+
+  if (isTransporte) {
+    const tr = result as TransporteResult;
+    const body = [
+      "=".repeat(50),
+      "NEXTECH INDUSTRIES",
+      "Sistema de Analisis — Problema de Transporte",
+      "Motor EOQ v2.1 + Gemini 2.5 Flash",
+      "=".repeat(50),
+      "",
+      `Fecha: ${date}`,
+      "",
+      "PROBLEMA: Distribución Motores LRE-7",
+      "  3 plantas × 4 sitios de lanzamiento",
+      "  Oferta = Demanda = 200 mot/mes (balanceado)",
+      "",
+      "RESULTADOS POR MÉTODO:",
+      `  ENO (Esquina Noroeste): $${tr.enoTotal.toLocaleString()}k/mes`,
+      `  Costo Mínimo:           $${tr.costoMinTotal.toLocaleString()}k/mes  ÓPTIMO`,
+      `  Vogel (VAM):            $${tr.vogelTotal.toLocaleString()}k/mes  ÓPTIMO`,
+      `  Ahorro vs. ENO:         $${(tr.enoTotal - tr.costoMinTotal).toLocaleString()}k/mes`,
+      "",
+      "=".repeat(50),
+      "ANALISIS NEXTECH AI (Gemini 2.5 Flash)",
+      "=".repeat(50),
+      "",
+      aiText,
+      "",
+      "=".repeat(50),
+      "Atentamente,",
+      "Equipo NexTech Industries — Ingenieria Industrial",
+      "Universidad La Salle Bajio | 2026",
+      "=".repeat(50),
+    ].join("\n");
+    return { subject: "NexTech Industries — Reporte Transporte LRE-7", body };
+  }
 
   const baseParams = [
     `D  — Demanda anual:     ${parseFloat(form.D).toLocaleString()} uds/año`,
@@ -536,20 +622,21 @@ function generateReport(form: FormValues, model: ModelType, result: EOQResult, a
   ];
   const params = baseParams.join("\n");
 
+  const eoqResult = result as EOQResultSin | EOQResultCon | EOQResultProdSin | EOQResultProdCon;
   const baseResults: string[] = [
-    `Cantidad optima Q:      ${Math.round(result.Q).toLocaleString()} uds/${orderLabel}`,
+    `Cantidad optima Q:      ${Math.round(eoqResult.Q).toLocaleString()} uds/${orderLabel}`,
     ...(hasDeficit ? [
-      `Unidades agotadas S:    ${Math.round((result as EOQResultCon | EOQResultProdCon).S).toLocaleString()} uds/ciclo`,
+      `Unidades agotadas S:    ${Math.round((eoqResult as EOQResultCon | EOQResultProdCon).S).toLocaleString()} uds/ciclo`,
     ] : []),
-    ...((result.type === "prod-sin-deficit" || result.type === "prod-con-deficit") ? [
-      `Inventario maximo IM:   ${Math.round((result as EOQResultProdSin | EOQResultProdCon).IM).toLocaleString()} uds`,
+    ...((eoqResult.type === "prod-sin-deficit" || eoqResult.type === "prod-con-deficit") ? [
+      `Inventario maximo IM:   ${Math.round((eoqResult as EOQResultProdSin | EOQResultProdCon).IM).toLocaleString()} uds`,
     ] : []),
-    ...(result.type === "con-deficit" ? [
-      `Inventario maximo IM:   ${Math.round((result as EOQResultCon).IM).toLocaleString()} uds`,
+    ...(eoqResult.type === "con-deficit" ? [
+      `Inventario maximo IM:   ${Math.round((eoqResult as EOQResultCon).IM).toLocaleString()} uds`,
     ] : []),
-    `${isProduction ? "Corridas" : "Pedidos"} por año N:  ${Math.round(result.N)} ${orderLabel}s`,
-    `Tiempo entre ${orderLabel}s:  ${Math.round(result.t)} días`,
-    `Costo Total Anual CT:   $${result.CT.toLocaleString()}`,
+    `${isProduction ? "Corridas" : "Pedidos"} por año N:  ${Math.round(eoqResult.N)} ${orderLabel}s`,
+    `Tiempo entre ${orderLabel}s:  ${Math.round(eoqResult.t)} días`,
+    `Costo Total Anual CT:   $${eoqResult.CT.toLocaleString()}`,
   ];
   const results = baseResults.join("\n");
 
@@ -694,6 +781,44 @@ export function AIAdvisor() {
 
   async function handleExecute() {
     setErrorMsg("");
+
+    if (model === "transporte") {
+      setPhase("calculating");
+      setResult(null);
+      setAiText("");
+      setAiDone(false);
+      setStepsLines([]);
+      setVisibleLines(0);
+      setElapsed(0);
+
+      const res: TransporteResult = { type: "transporte", enoTotal: 2420, costoMinTotal: 2020, vogelTotal: 2020 };
+      const steps = buildSteps(form, model, res);
+      setStepsLines(steps);
+      for (let i = 0; i <= steps.length; i++) {
+        await new Promise((r) => setTimeout(r, 55));
+        setVisibleLines(i);
+      }
+      setResult(res);
+      setPhase("streaming");
+      setTimeout(() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+
+      const prompt = `Problema de transporte NexTech Industries: 3 plantas (León=50, Cabo Cañaveral=70, Kourou=80 mot/mes) → 4 sitios (Vandenberg=60, Mar Pacífico=50, Wallops=40, Mahia=50). Matriz de costos en miles USD/motor. ENO=$2,420k, Costo Mínimo=$2,020k, Vogel=$2,020k. Ahorro=$400k/mes. Analiza comparativamente los tres métodos, recomienda el mejor y justifica brevemente por qué Vogel es técnicamente superior al ENO.`;
+      try {
+        for await (const chunk of streamGemini(apiKey, prompt)) setAiText((t) => t + chunk);
+        setAiDone(true);
+        setPhase("done");
+      } catch (err) {
+        const raw = err instanceof Error ? err.message : "Error de conexión";
+        let msg = `ERR: ${raw}`;
+        if (raw.includes("429")) { const m = raw.match(/"retryDelay":\s*"(\d+)s"/); msg = `ERR 429: Límite excedido. Espera ${m ? m[1] : "30"}s.`; }
+        else if (raw.includes("403")) msg = "ERR 403: Clave API inválida.";
+        else if (raw.includes("404")) msg = "ERR 404: Modelo no disponible.";
+        setErrorMsg(msg);
+        setPhase("error");
+      }
+      return;
+    }
+
     const D = parseFloat(form.D);
     const C1 = parseFloat(form.C1);
     const C2 = parseFloat(form.C2);
@@ -1161,7 +1286,7 @@ export function AIAdvisor() {
               >
                 {/* Model selector */}
                 <div className="space-y-2">
-                  <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ MODELO DE INVENTARIO:</div>
+                  <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ MODELO DE ANÁLISIS:</div>
                   <div className="grid grid-cols-2 gap-2">
                     {([
                       ["sin-deficit", "Compras · Sin Déficit"],
@@ -1184,11 +1309,60 @@ export function AIAdvisor() {
                       </button>
                     ))}
                   </div>
+                  {/* Transporte option — full width */}
+                  <div className="h-px mt-1" style={{ background: "rgba(196,82,42,0.2)" }} />
+                  <button
+                    onClick={() => setModel("transporte")}
+                    className="w-full text-[10px] tracking-[0.1em] uppercase px-3 py-2.5 font-bold transition-all text-left"
+                    style={{
+                      background: model === "transporte" ? "#C4522A" : "rgba(196,82,42,0.1)",
+                      color: model === "transporte" ? "#0A0300" : "rgba(255,212,168,0.5)",
+                      border: `1px solid ${model === "transporte" ? "#C4522A" : "rgba(196,82,42,0.3)"}`,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {model === "transporte" ? "▶ " : ""}Transporte · ENO / Costo Mínimo / Vogel
+                  </button>
                 </div>
 
                 <div className="h-px" style={{ background: "rgba(196,82,42,0.25)" }} />
 
-                {/* Nombre field — full width */}
+                {/* Transporte preset card */}
+                <AnimatePresence>
+                  {model === "transporte" && (
+                    <motion.div
+                      key="transporte-preset"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div className="space-y-3 p-4 rounded-sm" style={{ background: "rgba(196,82,42,0.1)", border: "1px solid rgba(196,82,42,0.35)" }}>
+                        <div className="text-xs font-bold" style={{ color: "#C4522A" }}>&gt;_ PROBLEMA PREESTABLECIDO — MOTORES LRE-7</div>
+                        <div className="text-xs space-y-1" style={{ color: "rgba(255,212,168,0.75)", fontFamily: "'Space Mono', monospace" }}>
+                          <div>3 Plantas: León(50), Cabo C.(70), Kourou(80)</div>
+                          <div>4 Sitios:  Vandenberg(60), Mar Pac.(50), Wallops(40), Mahia(50)</div>
+                          <div>Métodos: ENO · Costo Mínimo · Vogel</div>
+                        </div>
+                        <div className="text-xs" style={{ color: "rgba(255,212,168,0.45)" }}>
+                          El análisis compara los 3 métodos y Gemini explica el resultado óptimo.
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Nombre + numeric fields — hidden for transporte */}
+                <AnimatePresence>
+                  {model !== "transporte" && (
+                    <motion.div
+                      key="eoq-fields"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      style={{ overflow: "hidden" }}
+                      className="space-y-6"
+                    >
                 <div className="space-y-1">
                   <div className="text-xs" style={{ color: "#FFD4A8" }}>&gt;_ INSUMO / PRODUCTO:</div>
                   <div className="flex items-center gap-2">
@@ -1289,6 +1463,9 @@ export function AIAdvisor() {
                     </AnimatePresence>
                   </div>
                 </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {errorMsg && phase !== "streaming" && phase !== "calculating" && (
                   <div className="text-xs" style={{ color: "#FF7050" }}>{errorMsg}</div>
@@ -1516,7 +1693,41 @@ export function AIAdvisor() {
 
                 {/* Chart + results table */}
                 <AnimatePresence>
-                  {result && phase === "done" && (
+                  {result && phase === "done" && result.type === "transporte" && (
+                    <motion.div
+                      key="results-transporte"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <div className="rounded-sm overflow-hidden" style={{ border: "1px solid rgba(196,82,42,0.3)" }}>
+                        <div className="px-4 py-2 text-[10px] tracking-[0.15em] uppercase flex justify-between" style={{ background: "rgba(196,82,42,0.2)", borderBottom: "1px solid rgba(196,82,42,0.3)", color: "rgba(255,212,168,0.8)", fontFamily: "'Space Mono', monospace" }}>
+                          <span>Método</span><span>Costo Total (USD/mes)</span>
+                        </div>
+                        {([
+                          { label: "ENO (Esquina Noroeste)", val: result.enoTotal, best: false },
+                          { label: "Costo Mínimo", val: result.costoMinTotal, best: true },
+                          { label: "Vogel (VAM)", val: result.vogelTotal, best: true },
+                        ]).map((row, i) => (
+                          <div key={i} className="flex items-center justify-between px-4 py-3" style={{ background: i % 2 === 0 ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.15)", borderBottom: i < 2 ? "1px solid rgba(196,82,42,0.1)" : "none" }}>
+                            <span className="text-xs font-mono flex items-center gap-2" style={{ color: row.best ? "#FFD4A8" : "rgba(255,255,255,0.6)" }}>
+                              {row.best && <span style={{ color: "#C4522A" }}>✓</span>}{row.label}
+                            </span>
+                            <span className="text-sm font-bold font-mono" style={{ color: row.best ? "#C4522A" : "rgba(255,255,255,0.5)" }}>
+                              ${row.val.toLocaleString("es-MX")}k {row.best && "ÓPTIMO"}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="px-4 py-2 text-xs font-mono" style={{ background: "rgba(196,82,42,0.1)", color: "rgba(255,212,168,0.6)", borderTop: "1px solid rgba(196,82,42,0.2)" }}>
+                          Ahorro vs. ENO: ${(result.enoTotal - result.costoMinTotal).toLocaleString("es-MX")}k/mes
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {result && phase === "done" && result.type !== "transporte" && (
                     <motion.div
                       key="results"
                       initial={{ opacity: 0, y: 16 }}
