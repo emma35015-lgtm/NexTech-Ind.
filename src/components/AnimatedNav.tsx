@@ -12,6 +12,7 @@ const navItems = [
   { name: "Con Déficit", href: "#con-deficit" },
   { name: "IA Demo",     href: "#ai-demo" },
   { name: "Comparativo", href: "#comparativo" },
+  { name: "Transporte", href: "#transporte" },
   { name: "Equipo", href: "#equipo" },
 ];
 

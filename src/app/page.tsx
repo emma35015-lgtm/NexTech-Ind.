@@ -12,6 +12,7 @@ import { AIAdvisor } from "@/components/AIAdvisor";
 import { GlobeTracker } from "@/components/GlobeTracker";
 import { MissionProfile } from "@/components/MissionProfile";
 import { TablaComparativa } from "@/components/TablaComparativa";
+import { TransporteSection } from "@/components/TransporteSection";
 import { Conclusiones } from "@/components/Conclusiones";
 import { TeamSection } from "@/components/TeamSection";
 
@@ -223,6 +224,11 @@ export default function Home() {
 
             <RocketSeparator label="Comparativo" />
             <TablaComparativa />
+
+            <RocketSeparator label="Transporte" />
+            <section id="transporte">
+              <TransporteSection />
+            </section>
 
             <RocketSeparator label="Conclusiones" flip />
             <Conclusiones />
