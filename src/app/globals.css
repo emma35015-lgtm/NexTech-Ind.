@@ -1,0 +1,188 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-nt-bg: #C4522A;
+  --color-nt-light: #CF5E32;
+  --color-nt-dark: #A03D1A;
+  --color-nt-darker: #7A2D10;
+  --color-cream: #FFF0DC;
+  --color-cream-dim: #E0C4A0;
+  --color-cream-faint: #C4A07A;
+  --color-panel: #1A0800;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
+  --font-sans: 'Barlow Condensed', sans-serif;
+  --font-display: 'Bebas Neue', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: #C4522A;
+  color: #FFF0DC;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 400;
+  font-size: 1.05rem;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(255, 240, 220, 0.3);
+  color: #FFF0DC;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #7A2D10; }
+::-webkit-scrollbar-thumb { background: #E0C4A0; border-radius: 2px; }
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 240, 220, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 240, 220, 0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.dark-panel {
+  background-color: #1A0800;
+  border: 1px solid rgba(255, 240, 220, 0.15);
+}
+
+.formula-block {
+  background: rgba(0, 0, 0, 0.28);
+  border-left: 3px solid rgba(255, 240, 220, 0.6);
+  padding: 1rem 1.25rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: #FFFFFF;
+  overflow-x: auto;
+}
+
+.tva-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(255, 240, 220, 0.72);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.blink { animation: blink 1s step-end infinite; }
+
+/* Terminal typewriter cursor */
+.terminal-cursor {
+  color: #C4522A;
+  font-weight: 700;
+  line-height: 1;
+  animation: blink 0.7s step-end infinite;
+}
+
+/* Terminal panel — stronger border + corner pip */
+.terminal-panel {
+  position: relative;
+  border: 1px solid rgba(196, 82, 42, 0.35);
+  background: rgba(0, 0, 0, 0.22);
+}
+.terminal-panel::before {
+  content: '▸';
+  position: absolute;
+  top: -1px;
+  left: 6px;
+  font-size: 8px;
+  color: rgba(196, 82, 42, 0.5);
+  line-height: 1;
+}
+
+/* Mobile — iPhone optimizations */
+@media (max-width: 640px) {
+  .formula-block {
+    font-size: 0.68rem;
+    padding: 0.75rem 1rem;
+  }
+  .tva-label {
+    font-size: 0.65rem;
+  }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.7s ease-out forwards; }
+
+@keyframes drawLine {
+  from { stroke-dashoffset: var(--path-length, 2000); }
+  to { stroke-dashoffset: 0; }
+}
+.draw-line {
+  stroke-dasharray: var(--path-length, 2000);
+  animation: drawLine 2s ease-in-out forwards;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 240, 220, 0.2);
+}
+
+.num-highlight { color: #FFD4A8; font-weight: 700; }
+
+/* Scanlines for TVA panels */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom, transparent 0px, transparent 3px,
+    rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+}
+
+/* AI Advisor terminal inputs */
+.terminal-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(196,82,42,0.5);
+  color: #FFD4A8;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  padding: 4px 0;
+  outline: none;
+  width: 100%;
+}
+.terminal-input:focus { border-bottom-color: #C4522A; }
+.terminal-input::placeholder { color: rgba(255,212,168,0.3); }
+.terminal-input[type="number"]::-webkit-inner-spin-button,
+.terminal-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.terminal-input[type="number"] { -moz-appearance: textfield; }
+
+/* Pixel robot animation */
+@keyframes pixelWalk {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+.pixel-robot { animation: pixelWalk 0.6s ease-in-out infinite; }
+
+/* Miss Minutes pendulum animation */
+@keyframes tickTock {
+  0%   { transform: rotate(-5deg); }
+  50%  { transform: rotate(5deg); }
+  100% { transform: rotate(-5deg); }
+}
+.miss-minutes {
+  animation: tickTock 1.4s ease-in-out infinite;
+  transform-origin: center 4%;
+}
+
+@keyframes orbitPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.7); }
+}
+.orbit-pulse { animation: orbitPulse 2s ease-in-out infinite; }
